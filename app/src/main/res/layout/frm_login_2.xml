@@ -23,9 +23,20 @@
             android:background="@drawable/btn_iniciar_sesion"
             android:textColor="@android:color/white"
             android:text="INICIAR SESION"
-
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+        <android.support.v4.widget.Space
+            android:layout_width="match_parent"
+            android:layout_height="10dp" />
+
+        <com.facebook.login.widget.LoginButton
+        android:id="@+id/login_button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal"
+
+       />
 
         <android.support.v4.widget.Space
             android:layout_width="match_parent"
@@ -38,6 +49,8 @@
             android:text="REGISTRAR"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+
 
     </LinearLayout>
 

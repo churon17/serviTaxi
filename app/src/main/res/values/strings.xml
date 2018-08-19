@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">serviTaxi</string>
     <string name="title_activity_bienvenido_3">Map</string>
+    <string name="facebook_app_id">370442966862639</string>
+    <string name="fb_login_protocol_scheme">fb370442966862639</string>
+    <string name="error_Login">Ocurrio un error</string>
+    <string name="cancel_login">Se ha cancelado la operacion</string>
 </resources>

@@ -1,6 +1,7 @@
 package jeancarlosdev.servitaxi;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Handler;
@@ -14,9 +15,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.Button;
 import android.widget.Toast;
 
+import com.facebook.AccessToken;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.login.LoginManager;
 import com.github.glomadrian.materialanimatedswitch.MaterialAnimatedSwitch;
+import com.github.glomadrian.materialanimatedswitch.Utils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -32,12 +39,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONObject;
+
 public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener
 {
 
+    //region Atributos
     private GoogleMap mMap;
 
     private static final int PERMISSION_REQUEST_CODE = 7777;
@@ -56,22 +66,39 @@ public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback
 
     private static int DISPLACEMENT = 5000;
 
-    Marker mCurrent;
+    private Marker mCurrent;
 
-    MaterialAnimatedSwitch location_switch;
+    private MaterialAnimatedSwitch location_switch;
 
-    SupportMapFragment mapFragment;
+    private SupportMapFragment mapFragment;
+
+    private String nombre;
+
+    private String email;
+
+    //endregion
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.frm_bienvenido_3);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+        nombre = getIntent().getStringExtra("nombre");
+
+        email = getIntent().getStringExtra("email");
+
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        location_switch = (MaterialAnimatedSwitch)findViewById(R.id.switch_location);
+        Button btn_user = findViewById(R.id.btn_find_user);
+
+
+        btn_user.setText(
+                AccessToken.getCurrentAccessToken() == null? "No Logueado": nombre);
+
+        location_switch = findViewById(R.id.switch_location);
 
         location_switch.setOnCheckedChangeListener(
                 new MaterialAnimatedSwitch.OnCheckedChangeListener() {
@@ -123,6 +150,42 @@ public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+
+
+
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+        displayLocation();
+        startLocationUpdates();
+
+
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        mUltimaUbicacion = location;
+        displayLocation();
+    }
+
+    //region Metodos Propios
     private void setUpLocation() {
         if(ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
@@ -145,14 +208,8 @@ public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback
                 if(location_switch.isChecked()){
                     displayLocation();
                 }
-
             }
-
-
         }
-
-
-
     }
 
     private void createLocationRequest() {
@@ -214,7 +271,7 @@ public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback
         }
 
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,
-                (com.google.android.gms.location.LocationListener) this);
+                this);
 
     }
 
@@ -246,7 +303,7 @@ public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback
                 }
 
                 mCurrent = mMap.addMarker(new MarkerOptions().
-                         icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
+                        icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
                         .position(new LatLng(latitude, longitud))
                         .title("Usted"));
 
@@ -320,38 +377,13 @@ public class Bienvenido_3 extends FragmentActivity implements OnMapReadyCallback
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
                 mLocationRequest,this
         );
-    }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
 
 
     }
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
 
-        displayLocation();
-        startLocationUpdates();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        mUltimaUbicacion = location;
-        displayLocation();
-    }
-
+    //endregion
 
 }
 

@@ -8,26 +8,45 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+
+
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
+import org.json.JSONObject;
+
 import dmax.dialog.SpotsDialog;
+import jeancarlosdev.servitaxi.Utilidades.Utilidades;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class Login_2 extends AppCompatActivity {
 
-    Button btnSignIn, btnRegister;
 
-    RelativeLayout layoutPrincipal;
-
-    FirebaseAuth auth;
+    //region Atributos
+    private Button btnSignIn, btnRegister;
+    private RelativeLayout layoutPrincipal;
+    private FirebaseAuth auth;
+    private CallbackManager callbackManager;
+    private LoginButton loginButton;
+    private String email;
+    private String name;
+    Utilidades util = new Utilidades(this);
+    //endregion
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -37,21 +56,68 @@ public class Login_2 extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         CalligraphyConfig.initDefault(new CalligraphyConfig.
                 Builder()
                 .setDefaultFontPath("fonts/Arkhip_font.ttf").
                         setFontAttrId(R.attr.fontPath).build());
+
         setContentView(R.layout.frm_login_2);
+
+        callbackManager = CallbackManager.Factory.create();
 
         auth = FirebaseAuth.getInstance();
 
+        loginButton = findViewById(R.id.login_button);
 
-        btnSignIn = (Button)findViewById(R.id.btnIniciar);
+        loginButton.setReadPermissions("email");
 
-        btnRegister = (Button)findViewById(R.id.btnRegistrar);
+        btnSignIn = findViewById(R.id.btnIniciar);
 
-        layoutPrincipal = (RelativeLayout)findViewById(R.id.layoutPrincipal);
+        btnRegister = findViewById(R.id.btnRegistrar);
 
+        layoutPrincipal = findViewById(R.id.layoutPrincipal);
+
+        eventosOnClickBtns();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+
+        super.onActivityResult(requestCode, resultCode, data);
+
+    }
+
+
+
+    //region Metodos Propios
+    public void eventosOnClickBtns(){
+
+        //Inicio de Sesion Facebook
+        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+
+                 util.dataFacebook();
+            }
+
+            @Override
+            public void onCancel() {
+
+                mostrarMensaje(R.string.cancel_login);
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+                mostrarMensaje( R.string.error_Login);
+            }
+        });
+
+
+        //Mostrar Ventana Registrar
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -59,12 +125,20 @@ public class Login_2 extends AppCompatActivity {
             }
         });
 
+        //Mostrar Ventana para inicio de Sesion.
         btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mostrarVentanaLogin();
             }
         });
+    }
+
+    private void mostrarMensaje(int identificador_mensaje) {
+
+        Toast.makeText(Login_2.this,
+                identificador_mensaje,
+                Toast.LENGTH_SHORT).show();
     }
 
     private void mostrarVentanaLogin() {
@@ -268,4 +342,5 @@ public class Login_2 extends AppCompatActivity {
 
         dialog.show();
     }
+    //endregion
 }
