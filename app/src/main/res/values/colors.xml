@@ -18,4 +18,5 @@
     <color name="ballReleaseColor">#9E9E9E</color>
 
     <color name="TextColor">#f8b91e</color>
+    <color name="dividerColor">#1F000000</color>
 </resources>

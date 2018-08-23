@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "637503388792",
-    "firebase_url": "https://servitaxi-aa2ff.firebaseio.com",
-    "project_id": "servitaxi-aa2ff",
-    "storage_bucket": "servitaxi-aa2ff.appspot.com"
+    "project_number": "842504327618",
+    "firebase_url": "https://servitaxiconductor.firebaseio.com",
+    "project_id": "servitaxiconductor",
+    "storage_bucket": "servitaxiconductor.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:637503388792:android:1fc418c65f5ab6a5",
+        "mobilesdk_app_id": "1:842504327618:android:1fc418c65f5ab6a5",
         "android_client_info": {
           "package_name": "jeancarlosdev.servitaxi"
         }
       },
       "oauth_client": [
         {
-          "client_id": "637503388792-pjl8vbh8asqdgnf564b1t2s6st5fepes.apps.googleusercontent.com",
+          "client_id": "842504327618-eagqipft10f8614ti8io1asfrei03dp6.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "jeancarlosdev.servitaxi",
@@ -23,13 +23,13 @@
           }
         },
         {
-          "client_id": "637503388792-sj0eacahgipqfhpi35o1bglkj1h1j2u0.apps.googleusercontent.com",
+          "client_id": "842504327618-gs49spi05u65ajtedkbiehv2k8q6a0n3.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBkeFw72CblgwUaSZJHzabph8i-x7NDGKM"
+          "current_key": "AIzaSyD6fBtuLVIJSrVc_PmZEXSpBH1Lplo8bc4"
         }
       ],
       "services": {
@@ -40,7 +40,51 @@
           "status": 2,
           "other_platform_oauth_client": [
             {
-              "client_id": "637503388792-sj0eacahgipqfhpi35o1bglkj1h1j2u0.apps.googleusercontent.com",
+              "client_id": "842504327618-gs49spi05u65ajtedkbiehv2k8q6a0n3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842504327618:android:d6bfc29abb32cae4",
+        "android_client_info": {
+          "package_name": "jeancarlosdev.servitaxi_conductor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "842504327618-u8hpkann0k6gq2fbvni49c7rofbqk9li.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "jeancarlosdev.servitaxi_conductor",
+            "certificate_hash": "ea791f75f8ae46dfe759051c925140a7b4ab3ccf"
+          }
+        },
+        {
+          "client_id": "842504327618-gs49spi05u65ajtedkbiehv2k8q6a0n3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6fBtuLVIJSrVc_PmZEXSpBH1Lplo8bc4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "842504327618-gs49spi05u65ajtedkbiehv2k8q6a0n3.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

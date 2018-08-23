@@ -1,27 +1,24 @@
 package jeancarlosdev.servitaxi;
 
 import android.content.Intent;
-import android.os.Handler;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 
 import com.facebook.AccessToken;
 import com.facebook.FacebookSdk;
-import com.facebook.GraphRequest;
-import com.facebook.GraphResponse;
 import com.facebook.appevents.AppEventsLogger;
-import com.facebook.login.Login;
 
-import org.json.JSONObject;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import jeancarlosdev.servitaxi.Utilidades.Utilidades;
 
 public class Splash_1 extends AppCompatActivity {
-
-    private String nombre;
-
-    private String email;
 
     private Utilidades util = new Utilidades(this);
 
@@ -34,6 +31,22 @@ public class Splash_1 extends AppCompatActivity {
 
         Log.e("Contexto", this.getLocalClassName());
 
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(
+                    "jeancarlosdev.servitaxi",
+                    PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                Log.e("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+
+        } catch (NoSuchAlgorithmException e) {
+
+        }
+
+
         if(AccessToken.getCurrentAccessToken() != null){
 
             util.dataFacebook();
@@ -45,6 +58,9 @@ public class Splash_1 extends AppCompatActivity {
     }
 
 
+    /***
+     * Este metodo sirve para Inicializar el SDK de facebook para el Login.
+     */
 
     public void inicializarSDKFacebook(){
         FacebookSdk.sdkInitialize(getApplicationContext());

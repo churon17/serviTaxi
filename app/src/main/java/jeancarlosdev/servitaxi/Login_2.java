@@ -3,6 +3,7 @@ package jeancarlosdev.servitaxi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -24,12 +25,18 @@ import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 import org.json.JSONObject;
 
 import dmax.dialog.SpotsDialog;
+import jeancarlosdev.servitaxi.Modelos.Cliente;
 import jeancarlosdev.servitaxi.Utilidades.Utilidades;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
@@ -41,6 +48,9 @@ public class Login_2 extends AppCompatActivity {
     private Button btnSignIn, btnRegister;
     private RelativeLayout layoutPrincipal;
     private FirebaseAuth auth;
+    private FirebaseDatabase db;
+    DatabaseReference clientes;
+
     private CallbackManager callbackManager;
     private LoginButton loginButton;
     private String email;
@@ -50,6 +60,8 @@ public class Login_2 extends AppCompatActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
+
+
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
@@ -67,6 +79,10 @@ public class Login_2 extends AppCompatActivity {
         callbackManager = CallbackManager.Factory.create();
 
         auth = FirebaseAuth.getInstance();
+
+        db = FirebaseDatabase.getInstance();
+
+        clientes = db.getReference("Clientes");
 
         loginButton = findViewById(R.id.login_button);
 
@@ -113,6 +129,8 @@ public class Login_2 extends AppCompatActivity {
             public void onError(FacebookException error) {
 
                 mostrarMensaje( R.string.error_Login);
+
+                Log.e("ERROR DE FACEBOOK", error.toString());
             }
         });
 
@@ -202,30 +220,34 @@ public class Login_2 extends AppCompatActivity {
                             return;
                         }
                         //Autentificar con el servicio;
-
-                        android.app.AlertDialog dialogoEspera = new SpotsDialog(Login_2.this);
+                        final android.app.AlertDialog dialogoEspera = new SpotsDialog(Login_2.this);
 
                         dialogoEspera.show();
 
+                        auth.signInWithEmailAndPassword(etxtEmailInicio.getText().toString(),
+                                etxtContrasenaInicio.getText().toString())
+                                .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                    @Override
+                                    public void onSuccess(AuthResult authResult) {
+                                        dialogoEspera.dismiss();
+                                        startActivity(new Intent(Login_2.this
+                                                , Bienvenido.class));
 
-                        Toast.makeText(Login_2.this,
-                                "Agregar el metodo del servicio de Inicio de Sesion",
-                                Toast.LENGTH_SHORT).show();
+                                        finish();
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                dialogoEspera.dismiss();
+                                Snackbar.make(layoutPrincipal,
+                                        "Error" +e.getMessage(),
+                                        Snackbar.LENGTH_SHORT).show();
 
-                        /*Parar Dialogo de espera*/
-
-                        dialogoEspera.dismiss();
-
-                        btnSignIn.setEnabled(true);
-                        /*Activo para que vuelva a la normalidad,
-                         * luego de que haya cumplido alguna accion*/
-
-                        startActivity(new Intent(Login_2.this, Bienvenido_3.class));
-                        finish();
-
+                                btnSignIn.setEnabled(true);
+                            }
+                        });
                     }
                 });
-
 
         dialogInicio.setNegativeButton("CANCELAR", new DialogInterface.OnClickListener() {
             @Override
@@ -265,9 +287,8 @@ public class Login_2 extends AppCompatActivity {
         dialog.setPositiveButton("REGISTRAR", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
-
                 dialogInterface.dismiss();
+
                 if(TextUtils.isEmpty(etxtEmail.getText().toString())){
 
                     Snackbar.make(layoutPrincipal,
@@ -317,18 +338,58 @@ public class Login_2 extends AppCompatActivity {
                     return;
                 }
 
+                auth.createUserWithEmailAndPassword(
+                        etxtEmail.getText().toString(),
+                        etxtContrasena.getText().toString()
+                )
+                        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                            @Override
+                            public void onSuccess(AuthResult authResult) {
+                                //Guardar Usuario en la base de datos.
+
+                                Cliente cliente = new Cliente();
+
+                                cliente.setEmail(etxtEmail.getText().toString());
+                                cliente.setPassword(etxtContrasena.getText().toString());
+                                cliente.setNombre(etxtNombre.getText().toString());
+                                cliente.setTelefono(etxtTelefono.getText().toString());
+
+                                //Usamos al email como llave primaria.
+                                clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                        .setValue(cliente)
+                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+
+                                                Snackbar.make(layoutPrincipal,
+                                                        "Cliente Registrado correctamente",
+                                                        Snackbar.LENGTH_SHORT ).show();
+
+
+                                            }
+                                        })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+
+                                                Snackbar.make(layoutPrincipal,
+                                                        "Cliente no registrado " + e.getMessage(),
+                                                        Snackbar.LENGTH_SHORT).show();
+                                            }
+                                        });
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Snackbar.make(layoutPrincipal,
+                                "Cliente no registrado" + e.getMessage(),
+                                Snackbar.LENGTH_SHORT ).show();
+                    }
+                });
+
                 Toast.makeText(getApplicationContext(),
                         "Se ha guardado correctamente",
                         Toast.LENGTH_SHORT).show();
-
-              /*  auth.createUserWithEmailAndPassword(etxtEmail.getText().toString(),
-                        etxtContrasena.getText().toString())
-                        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
-                    @Override
-                    public void onSuccess(AuthResult authResult) {
-                        //Se ha guardado correctamente el Chofer.
-                    }
-                }); */
             }
         });
 

@@ -12,8 +12,7 @@ import com.facebook.GraphResponse;
 
 import org.json.JSONObject;
 
-import jeancarlosdev.servitaxi.Bienvenido_3;
-
+import jeancarlosdev.servitaxi.Bienvenido;
 
 
 public class Utilidades {
@@ -25,7 +24,9 @@ public class Utilidades {
     private Context contexto;
 
     public Utilidades(Context contexto) {
+
         this.contexto = contexto;
+
     }
 
     public  void dataFacebook(){
@@ -36,8 +37,7 @@ public class Utilidades {
                     @Override
                     public void onCompleted(JSONObject object, GraphResponse response) {
 
-                        Intent intencion = new Intent(contexto, Bienvenido_3.class);
-
+                        Intent intencion = new Intent(contexto, Bienvenido.class);
                         try {
 
                             nombre = object.getString("name");
