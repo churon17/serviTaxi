@@ -124,8 +124,6 @@ public class Bienvenido extends AppCompatActivity
 
         //Geo fire.
 
-        //Test
-
         ref = FirebaseDatabase.getInstance().getReference("Drivers");
 
         geoFire = new GeoFire(ref);

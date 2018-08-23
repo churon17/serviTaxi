@@ -50,7 +50,6 @@ public class Login_2 extends AppCompatActivity {
     private FirebaseAuth auth;
     private FirebaseDatabase db;
     DatabaseReference clientes;
-
     private CallbackManager callbackManager;
     private LoginButton loginButton;
     private String email;
@@ -60,7 +59,6 @@ public class Login_2 extends AppCompatActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
-
 
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
@@ -105,8 +103,6 @@ public class Login_2 extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
     }
-
-
 
     //region Metodos Propios
     public void eventosOnClickBtns(){
@@ -364,7 +360,6 @@ public class Login_2 extends AppCompatActivity {
                                                 Snackbar.make(layoutPrincipal,
                                                         "Cliente Registrado correctamente",
                                                         Snackbar.LENGTH_SHORT ).show();
-
 
                                             }
                                         })
