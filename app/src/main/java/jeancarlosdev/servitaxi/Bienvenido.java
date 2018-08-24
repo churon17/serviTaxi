@@ -30,6 +30,8 @@ import android.widget.Toast;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -45,9 +47,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
+import jeancarlosdev.servitaxi.Common.Common;
+import jeancarlosdev.servitaxi.Modelos.Cliente;
 import jeancarlosdev.servitaxi.Utilidades.CustomInfoWindow;
 
 public class Bienvenido extends AppCompatActivity
@@ -97,6 +104,11 @@ public class Bienvenido extends AppCompatActivity
     String driver_id = "";
 
     int radio = 1;
+
+    int distance = 1; // 3km
+
+    private static final int LIMIT = 3;
+
     //endregion
 
     @Override
@@ -124,7 +136,7 @@ public class Bienvenido extends AppCompatActivity
 
         //Geo fire.
 
-        ref = FirebaseDatabase.getInstance().getReference("Drivers");
+        ref = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
 
         geoFire = new GeoFire(ref);
 
@@ -157,7 +169,7 @@ public class Bienvenido extends AppCompatActivity
 
     private void requestPickUpHere(String uid) {
 
-        DatabaseReference dbRequest = FirebaseDatabase.getInstance().getReference("Solicitud");
+        DatabaseReference dbRequest = FirebaseDatabase.getInstance().getReference(Common.solicitud_tb1);
 
         GeoFire mGeoFire = new GeoFire(dbRequest);
         mGeoFire.setLocation(uid, new GeoLocation(mUltimaUbicacion.getLatitude()
@@ -180,7 +192,55 @@ public class Bienvenido extends AppCompatActivity
         mUserMarker.showInfoWindow();
 
         btnPickUpRequest.setText("Getting Your Driver....");
+        
+        findDrivers();
 
+    }
+
+    private void findDrivers() {
+        DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.solicitud_tb1);
+
+        GeoFire gfDrivers = new GeoFire(drivers);
+
+        GeoQuery geoQuery = gfDrivers.queryAtLocation(new GeoLocation(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude()), radio);
+        geoQuery.removeAllListeners();
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                //Si lo encuentra
+
+                if (!conductorEncontrado) {
+                    conductorEncontrado = true;
+                    driver_id = key;
+                    btnPickUpRequest.setText("Llamar Taxi");
+                    Toast.makeText(Bienvenido.this, "" + key, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                //Si no encuentra un conductor, aumentar radio
+                if(!conductorEncontrado){
+                    radio++;
+                    findDrivers();
+                }
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
     }
 
     @Override
@@ -270,11 +330,70 @@ public class Bienvenido extends AppCompatActivity
 
                 rotateMarker(mUserMarker, -360,  mMap);
 
+                loadAllAvailableDrivers();
+
         }else{
 
             Log.d("ERROR", "CAN NOT GET YOUR LOCATION");
         }
 
+    }
+
+    /***
+     * Cargar todos los conductores en un radio de 3km
+     */
+    private void loadAllAvailableDrivers() {
+        DatabaseReference driverLocation = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
+        GeoFire gf = new GeoFire(driverLocation);
+
+        GeoQuery geoQuery = gf.queryAtLocation(new GeoLocation(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude()), distance);
+        geoQuery.removeAllListeners();
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, final GeoLocation location) {
+                FirebaseDatabase.getInstance().getReference(Common.conductor_tb1).child(key).addListenerForSingleValueEvent(
+                        new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                Cliente cliente = dataSnapshot.getValue(Cliente.class);
+
+                                mMap.addMarker(new MarkerOptions().position(new LatLng(location.latitude, location.longitude))
+                                                .flat(true)
+                                                .title(cliente.getNombre())
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.car)));
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        }
+                );
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                if (distance <= LIMIT){
+                    distance++;
+                    loadAllAvailableDrivers();
+                }
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
     }
 
     private void createLocationRequest() {

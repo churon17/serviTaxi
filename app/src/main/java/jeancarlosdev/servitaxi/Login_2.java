@@ -36,6 +36,7 @@ import com.rengwuxian.materialedittext.MaterialEditText;
 import org.json.JSONObject;
 
 import dmax.dialog.SpotsDialog;
+import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
 import jeancarlosdev.servitaxi.Utilidades.Utilidades;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
@@ -80,7 +81,7 @@ public class Login_2 extends AppCompatActivity {
 
         db = FirebaseDatabase.getInstance();
 
-        clientes = db.getReference("Clientes");
+        clientes = db.getReference(Common.clientes_tb1);
 
         loginButton = findViewById(R.id.login_button);
 
