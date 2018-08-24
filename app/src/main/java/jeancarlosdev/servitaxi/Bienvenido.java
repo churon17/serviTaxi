@@ -265,7 +265,7 @@ public class Bienvenido extends AppCompatActivity
     }
 
     private void findDrivers() {
-        DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.solicitud_tb1);
+        DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
 
         GeoFire gfDrivers = new GeoFire(drivers);
 
