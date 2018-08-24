@@ -61,6 +61,7 @@ public class Login_2 extends AppCompatActivity {
     @Override
     protected void attachBaseContext(Context newBase) {
 
+
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
