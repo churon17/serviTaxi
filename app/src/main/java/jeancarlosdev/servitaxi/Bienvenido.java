@@ -118,6 +118,10 @@ public class Bienvenido extends AppCompatActivity
 
     IFCMService mService;
 
+    //Presense System
+
+    DatabaseReference driverAvailable;
+
     //endregion
 
     @Override
@@ -143,6 +147,8 @@ public class Bienvenido extends AppCompatActivity
                 .findFragmentById(R.id.map);
 
         mapFragment.getMapAsync(this);
+
+
 
         //Geo fire.
 
@@ -200,21 +206,39 @@ public class Bienvenido extends AppCompatActivity
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+
                         for (DataSnapshot postSnapShot:dataSnapshot.getChildren()){
-                            Token token = postSnapShot.getValue(Token.class); //Obtener Token de database con key
 
-                            String json_lat_lng = new Gson().toJson(new LatLng(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude()));
+                            Token token = postSnapShot
+                                    .getValue(Token.class); //Obtener Token de database con key
 
-                            Notification data = new Notification("EDMTDEV", json_lat_lng); //Enviar a conductor app
-                            Sender content = new Sender(token.getToken(), data); //Enviar la data al token
+                            String json_lat_lng = new Gson()
+                                    .toJson(new LatLng(mUltimaUbicacion.getLatitude(),
+                                            mUltimaUbicacion.getLongitude()));
+
+                            String riderToken = FirebaseInstanceId
+                                    .getInstance()
+                                    .getToken();
+
+                            Notification data = new Notification(
+                                    riderToken,
+                                    json_lat_lng); //Enviar a conductor app
+
+                            Sender content = new Sender(token.getToken(),
+                                    data); //Enviar la data al token
 
                             mService.sendMessage(content)
                                     .enqueue(new Callback<FCMResponse>() {
                                         @Override
-                                        public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
+                                        public void onResponse(Call<FCMResponse> call,
+                                                               Response<FCMResponse> response) {
+
                                             if(response.body().success == 1){
+
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
                                             }else {
+
                                                 Toast.makeText(Bienvenido.this, "La Peticion Fallo", Toast.LENGTH_SHORT).show();
                                             }
                                         }
@@ -373,6 +397,24 @@ public class Bienvenido extends AppCompatActivity
 
         if(mUltimaUbicacion != null){
 
+            driverAvailable = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
+            driverAvailable.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    //Si no hay ningun cambia en la tabla Conductor, vamos a recargar
+                    //todos los conductores disponibles.
+
+                    loadAllAvailableDrivers();
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+
+
                 final double latitude = mUltimaUbicacion.getLatitude();
                 final double longitud = mUltimaUbicacion.getLongitude();
 
@@ -410,26 +452,58 @@ public class Bienvenido extends AppCompatActivity
      * Cargar todos los conductores en un radio de 3km
      */
     private void loadAllAvailableDrivers() {
-        DatabaseReference driverLocation = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
+
+        /*
+        * Primero vamos a borrar todos los marcadores, tanto como los conductores
+        * como el nuestro
+        * */
+
+        mMap.clear();
+
+        /*
+        * Ahora agregamos nuevamenye nuestra ubicacion.
+        * */
+
+        mMap.addMarker(new MarkerOptions().
+                icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
+                .position(new LatLng(mUltimaUbicacion.getLatitude(),
+                        mUltimaUbicacion.getLongitude()))
+                .title("Usted"));
+
+        DatabaseReference driverLocation = FirebaseDatabase.
+                getInstance().
+                getReference(Common.drivers_tb1);
+
         GeoFire gf = new GeoFire(driverLocation);
 
-        GeoQuery geoQuery = gf.queryAtLocation(new GeoLocation(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude()), distance);
+        GeoQuery geoQuery = gf.queryAtLocation
+                (new GeoLocation(mUltimaUbicacion.getLatitude(),
+                        mUltimaUbicacion.getLongitude()),
+                        distance);
+
         geoQuery.removeAllListeners();
+
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, final GeoLocation location) {
-                FirebaseDatabase.getInstance().getReference(Common.conductor_tb1).child(key).addListenerForSingleValueEvent(
-                        new ValueEventListener() {
+
+                FirebaseDatabase.
+                        getInstance()
+                        .getReference(Common.conductor_tb1).child(key)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 Cliente cliente = dataSnapshot.getValue(Cliente.class);
 
-                                mMap.addMarker(new MarkerOptions().position(new LatLng(location.latitude, location.longitude))
+                                mMap.addMarker(
+                                        new MarkerOptions().
+                                                position(new LatLng(location.latitude,
+                                                        location.longitude))
                                                 .flat(true)
                                                 .title(cliente.getNombre())
-                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.car)));
+                                                .icon(BitmapDescriptorFactory
+                                                        .fromResource(R.drawable.car)));
                             }
-
                             @Override
                             public void onCancelled(@NonNull DatabaseError databaseError) {
 
