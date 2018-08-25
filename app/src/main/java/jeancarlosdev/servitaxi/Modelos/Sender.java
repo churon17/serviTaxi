@@ -1,5 +1,9 @@
 package jeancarlosdev.servitaxi.Modelos;
 
+/***
+ * Modelo de envío para notificaciones
+ */
+
 public class Sender {
 
     public String to;

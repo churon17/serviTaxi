@@ -108,7 +108,7 @@ public class Bienvenido extends AppCompatActivity
 
     boolean conductorEncontrado = false;
 
-    String driver_id = "";
+    String driver_idGlob = "";
 
     int radio = 1;
 
@@ -178,7 +178,7 @@ public class Bienvenido extends AppCompatActivity
                 if(!conductorEncontrado){
                     requestPickUpHere(FirebaseAuth.getInstance().getCurrentUser().getUid());
                 }else{
-                    sendRequestToDriver(driver_id);
+                    sendRequestToDriver(driver_idGlob);
                 }
 
             }
@@ -198,7 +198,7 @@ public class Bienvenido extends AppCompatActivity
 
     }
 
-    private void sendRequestToDriver(String driver_id) {
+    private void sendRequestToDriver(final String driver_id) {
 
         DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token_tb1);
 
@@ -237,6 +237,9 @@ public class Bienvenido extends AppCompatActivity
                                             if(response.body().success == 1){
 
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
+                                                conductorEncontrado = false;
+                                                driver_idGlob = "";
+                                                btnPickUpRequest.setText("Solicitar Taxi");
                                             }else {
 
                                                 Toast.makeText(Bienvenido.this, "La Peticion Fallo", Toast.LENGTH_SHORT).show();
@@ -282,7 +285,7 @@ public class Bienvenido extends AppCompatActivity
 
         mUserMarker.showInfoWindow();
 
-        btnPickUpRequest.setText("Getting Your Driver....");
+        btnPickUpRequest.setText("Encontrando tu Taxi....");
         
         findDrivers();
 
@@ -302,9 +305,9 @@ public class Bienvenido extends AppCompatActivity
 
                 if (!conductorEncontrado) {
                     conductorEncontrado = true;
-                    driver_id = key;
+                    driver_idGlob = key;
                     btnPickUpRequest.setText("Llamar Taxi");
-                    Toast.makeText(Bienvenido.this, "" + key, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Bienvenido.this, "Taxi Encontrado!", Toast.LENGTH_SHORT).show();
                 }
             }
 

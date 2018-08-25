@@ -1,5 +1,9 @@
 package jeancarlosdev.servitaxi.Modelos;
 
+/***
+ * Modelo de Token
+ */
+
 public class Token {
 
     private String token;

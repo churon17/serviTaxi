@@ -1,5 +1,9 @@
 package jeancarlosdev.servitaxi.Modelos;
 
+/***
+ * Modelo del cliente con sus atributos
+ */
+
 public class Cliente {
 
     private String nombre;

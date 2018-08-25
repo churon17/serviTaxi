@@ -3,6 +3,10 @@ package jeancarlosdev.servitaxi.Common;
 import jeancarlosdev.servitaxi.Remote.FCMClient;
 import jeancarlosdev.servitaxi.Remote.IFCMService;
 
+/***
+ * Variables en común del proyecto para un fácil mantenimiento
+ */
+
 public class Common {
 
     public static final String clientes_tb1 = "Clientes";

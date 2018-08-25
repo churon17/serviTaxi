@@ -2,6 +2,10 @@ package jeancarlosdev.servitaxi.Modelos;
 
 import java.util.List;
 
+/***
+ * Modelo de FCMResonse con sus atributos para respuestas de FCMService
+ */
+
 public class FCMResponse {
 
     public long multicast_id;

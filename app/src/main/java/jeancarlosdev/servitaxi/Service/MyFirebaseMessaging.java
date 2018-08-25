@@ -36,11 +36,28 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
                             MyFirebaseMessaging.this,
                             remoteMessage.getNotification().getBody(),
                             Toast.LENGTH_SHORT).show();
+
+
                 }
             });
         }else if(remoteMessage.getNotification().getTitle().equals("Llegada")){
 
             showArrivedNotification(remoteMessage.getNotification().getBody());
+        }else if(remoteMessage.getNotification().getTitle().equals("Aceptado")){
+            Handler handler = new Handler(Looper.getMainLooper());
+
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+
+                    Toast.makeText(
+                            MyFirebaseMessaging.this,
+                            remoteMessage.getNotification().getBody(),
+                            Toast.LENGTH_SHORT).show();
+
+
+                }
+            });
         }
 
     }

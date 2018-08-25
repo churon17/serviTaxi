@@ -1,5 +1,9 @@
 package jeancarlosdev.servitaxi.Modelos;
 
+/***
+ * Modelo del resultado para mensajes
+ */
+
 public class Result {
     public String message_id;
 

@@ -1,5 +1,9 @@
 package jeancarlosdev.servitaxi.Modelos;
 
+/***
+ * Modelo de notificaciones con sus atributos para la creacion de notificaciones de la aplicacion
+ */
+
 public class Notification {
 
     public String title;
