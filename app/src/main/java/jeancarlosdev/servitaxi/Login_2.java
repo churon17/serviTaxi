@@ -16,6 +16,10 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.Volley;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -23,6 +27,7 @@ import com.facebook.FacebookException;
 
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
+import com.facebook.internal.LockOnGetVariable;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -35,9 +40,17 @@ import com.rengwuxian.materialedittext.MaterialEditText;
 
 import org.json.JSONObject;
 
+import java.util.HashMap;
+
 import dmax.dialog.SpotsDialog;
 import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
+import jeancarlosdev.servitaxi.Modelos.ClienteBackJson;
+import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
+import jeancarlosdev.servitaxi.Remote.Conexion;
+import jeancarlosdev.servitaxi.Remote.VolleyPeticion;
+import jeancarlosdev.servitaxi.Remote.VolleyProcesadorResultado;
+import jeancarlosdev.servitaxi.Remote.VolleyTiposError;
 import jeancarlosdev.servitaxi.Utilidades.Utilidades;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
@@ -56,13 +69,21 @@ public class Login_2 extends AppCompatActivity {
     private String email;
     private String name;
     Utilidades util = new Utilidades(this);
+
+    private RequestQueue requestQueue;
+
+    boolean guardo = false;
+
+    boolean inicioSesion = false;
+
+    HashMap<String, String> mapa;
     //endregion
 
     @Override
     protected void attachBaseContext(Context newBase) {
 
-
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+
     }
 
     @Override
@@ -81,6 +102,8 @@ public class Login_2 extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
 
         db = FirebaseDatabase.getInstance();
+
+        requestQueue = Volley.newRequestQueue(getApplicationContext());
 
         clientes = db.getReference(Common.clientes_tb1);
 
@@ -107,14 +130,325 @@ public class Login_2 extends AppCompatActivity {
     }
 
     //region Metodos Propios
-    public void eventosOnClickBtns(){
+    public void eventosOnClickBtns() {
 
         //Inicio de Sesion Facebook
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
 
-                 util.dataFacebook();
+                final String[] arreglo = util.dataFacebook();
+
+                mapa = new HashMap<>();
+
+                mapa.put("correo", arreglo[1]);
+
+                mapa.put("clave", "12345");
+
+                VolleyPeticion<ClienteBackJson> inicio = Conexion.iniciarSesion(
+                        getApplicationContext(),
+                        mapa,
+                        new Response.Listener<ClienteBackJson>() {
+                            @Override
+                            public void onResponse(ClienteBackJson response) {
+
+                                if (response != null
+                                        && response.siglas.equalsIgnoreCase("ND")) {
+
+                                    Snackbar.make(layoutPrincipal,
+                                            "Error " + response.mensaje,
+                                            Snackbar.LENGTH_SHORT
+                                    ).show();
+
+                                    btnSignIn.setEnabled(true);
+
+                                    mapa = new HashMap<>();
+
+                                    mapa.put("correo", arreglo[1]);
+
+                                    mapa.put("clave", "123456789");
+
+                                    final String apellidos[] = (arreglo[0]).split(" ");
+
+                                    String apellido = "";
+
+                                    if (apellidos.length > 1) {
+
+                                        apellido = apellidos[2];
+
+                                        if (apellidos.length > 2) {
+
+                                            apellido = apellido + apellidos[3];
+                                        }
+                                    }
+
+                                    final String apellidoFinal = apellido;
+
+                                    mapa.put("nombre", arreglo[0]);
+
+                                    mapa.put("apellido", apellido);
+
+                                    //region RegistrarCliente
+
+                                    VolleyPeticion<MensajeBackJson> registrar = Conexion.registrarCliente(
+                                            getApplicationContext(),
+                                            mapa,
+                                            new Response.Listener<MensajeBackJson>() {
+                                                @Override
+                                                public void onResponse(MensajeBackJson response) {
+
+                                                    if (response != null && response.siglas.equalsIgnoreCase("FD")) {
+
+                                                        Toast.makeText(layoutPrincipal.getContext(), response.mensaje, Toast.LENGTH_SHORT).show();
+
+                                                        btnSignIn.setEnabled(true);
+
+                                                        Log.e("ERROR", response.mensaje);
+
+                                                        return;
+
+                                                    } else {
+
+                                                        auth.createUserWithEmailAndPassword(
+                                                                arreglo[1],
+                                                                "123456789"
+                                                        )
+                                                                .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                                    @Override
+                                                                    public void onSuccess(AuthResult authResult) {
+
+                                                                        Cliente cliente = new Cliente();
+
+                                                                        cliente.setEmail(arreglo[1]);
+                                                                        cliente.setPassword("123456789");
+                                                                        cliente.setNombre(arreglo[0]);
+                                                                        cliente.setApellidos(apellidoFinal);
+
+                                                                        //Usamos al email como llave primaria.
+                                                                        clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                                                                .setValue(cliente)
+                                                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                                                    @Override
+                                                                                    public void onSuccess(Void aVoid) {
+
+                                                                                        Snackbar.make(layoutPrincipal,
+                                                                                                "Cliente Registrado correctamente",
+                                                                                                Snackbar.LENGTH_SHORT).show();
+
+                                                                                        startActivity(new Intent(getApplicationContext(), Bienvenido.class));
+                                                                                    }
+                                                                                })
+                                                                                .addOnFailureListener(new OnFailureListener() {
+                                                                                    @Override
+                                                                                    public void onFailure(@NonNull Exception e) {
+
+                                                                                        Snackbar.make(layoutPrincipal,
+                                                                                                "Cliente no registrado " + e.getMessage(),
+                                                                                                Snackbar.LENGTH_SHORT).show();
+
+                                                                                        Log.e("Cliente no registrado", e.getMessage());
+
+                                                                                        return;
+                                                                                    }
+                                                                                });
+                                                                    }
+                                                                }).addOnFailureListener(new OnFailureListener() {
+                                                            @Override
+                                                            public void onFailure(@NonNull Exception e) {
+                                                                Snackbar.make(layoutPrincipal,
+                                                                        "Cliente no registrado" + e.getMessage(),
+                                                                        Snackbar.LENGTH_SHORT).show();
+
+                                                                Log.e("Cliente no registrado", e.getMessage());
+
+                                                                return;
+                                                            }
+
+                                                        });
+
+                                                        Toast.makeText(getApplicationContext(),
+                                                                "Se ha guardado correctamente",
+                                                                Toast.LENGTH_SHORT).show();
+
+                                                    }
+                                                }
+                                            },
+                                            new Response.ErrorListener() {
+
+                                                @Override
+                                                public void onErrorResponse(VolleyError error) {
+
+                                                    VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                                                    Log.e("Error", error.toString());
+
+                                                    return;
+                                                }
+
+                                            }
+                                    );
+
+                                    requestQueue.add(registrar);
+                                    //endregion
+
+
+                                } else {
+
+                                    Snackbar.make(layoutPrincipal,
+                                            "Bienvenido, " + response.nombre,
+                                            Snackbar.LENGTH_SHORT).show();
+
+                                    startActivity(new Intent(getApplicationContext(), Bienvenido.class));
+
+                                }
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+
+                                VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                                Log.e("Error", error.toString());
+
+                                mapa = new HashMap<>();
+
+                                mapa.put("correo", arreglo[1]);
+
+                                mapa.put("clave", "12345");
+
+                                final String apellidos[] = (arreglo[0]).split(" ");
+
+                                String apellido = "";
+
+                                if (apellidos.length > 2) {
+
+                                    apellido = apellidos[2];
+
+                                    if (apellidos.length > 3) {
+
+                                        apellido = apellido + apellidos[3];
+                                    }
+                                }
+
+                                final String apellidoFinal = apellido;
+
+                                mapa.put("nombre", arreglo[0]);
+
+                                mapa.put("apellido", apellidoFinal);
+
+                                //region RegistrarCliente
+
+                                VolleyPeticion<MensajeBackJson> registrar = Conexion.registrarCliente(
+                                        getApplicationContext(),
+                                        mapa,
+                                        new Response.Listener<MensajeBackJson>() {
+                                            @Override
+                                            public void onResponse(MensajeBackJson response) {
+
+                                                if (response != null && response.siglas.equalsIgnoreCase("FD")) {
+
+                                                    Toast.makeText(layoutPrincipal.getContext(), response.mensaje, Toast.LENGTH_SHORT).show();
+
+                                                    btnSignIn.setEnabled(true);
+
+                                                    Log.e("ERROR", response.mensaje);
+
+                                                    return;
+
+                                                } else {
+
+                                                    auth.createUserWithEmailAndPassword(
+                                                            arreglo[1],
+                                                            "123456789"
+                                                    )
+                                                            .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                                @Override
+                                                                public void onSuccess(AuthResult authResult) {
+
+                                                                    Cliente cliente = new Cliente();
+
+                                                                    cliente.setEmail(arreglo[1]);
+                                                                    cliente.setPassword("123456789");
+                                                                    cliente.setNombre(arreglo[0]);
+                                                                    cliente.setApellidos(apellidoFinal);
+
+                                                                    //Usamos al email como llave primaria.
+                                                                    clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                                                            .setValue(cliente)
+                                                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                                                @Override
+                                                                                public void onSuccess(Void aVoid) {
+
+                                                                                    Snackbar.make(layoutPrincipal,
+                                                                                            "Cliente Registrado correctamente",
+                                                                                            Snackbar.LENGTH_SHORT).show();
+
+                                                                                    startActivity(new Intent(getApplicationContext(), Bienvenido.class));
+                                                                                }
+                                                                            })
+                                                                            .addOnFailureListener(new OnFailureListener() {
+                                                                                @Override
+                                                                                public void onFailure(@NonNull Exception e) {
+
+                                                                                    Snackbar.make(layoutPrincipal,
+                                                                                            "Cliente no registrado " + e.getMessage(),
+                                                                                            Snackbar.LENGTH_SHORT).show();
+
+                                                                                    Log.e("Cliente no registrado", e.getMessage());
+
+                                                                                    return;
+                                                                                }
+                                                                            });
+                                                                }
+                                                            }).addOnFailureListener(new OnFailureListener() {
+                                                        @Override
+                                                        public void onFailure(@NonNull Exception e) {
+                                                            Snackbar.make(layoutPrincipal,
+                                                                    "Cliente no registrado" + e.getMessage(),
+                                                                    Snackbar.LENGTH_SHORT).show();
+
+                                                            Log.e("Cliente no registrado", e.getMessage());
+
+                                                            return;
+                                                        }
+
+                                                    });
+
+                                                    Toast.makeText(getApplicationContext(),
+                                                            "Se ha guardado correctamente",
+                                                            Toast.LENGTH_SHORT).show();
+
+                                                }
+                                            }
+                                        },
+                                        new Response.ErrorListener() {
+
+                                            @Override
+                                            public void onErrorResponse(VolleyError error) {
+
+                                                VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                                                Log.e("Error", error.toString());
+
+                                                return;
+                                            }
+
+                                        }
+                                );
+
+                                requestQueue.add(registrar);
+                                //endregion
+
+
+                                return;
+                            }
+                        }
+                );
+
+                requestQueue.add(inicio);
+
+
             }
 
             @Override
@@ -126,7 +460,7 @@ public class Login_2 extends AppCompatActivity {
             @Override
             public void onError(FacebookException error) {
 
-                mostrarMensaje( R.string.error_Login);
+                mostrarMensaje(R.string.error_Login);
 
                 Log.e("ERROR DE FACEBOOK", error.toString());
             }
@@ -150,6 +484,7 @@ public class Login_2 extends AppCompatActivity {
         });
     }
 
+
     private void mostrarMensaje(int identificador_mensaje) {
 
         Toast.makeText(Login_2.this,
@@ -162,7 +497,7 @@ public class Login_2 extends AppCompatActivity {
 
         dialogInicio.setTitle("Inicio de Sesion");
 
-        dialogInicio.setMessage("Inicio de sesion conductor ServiTaxi");
+        dialogInicio.setMessage("Inicio de sesion Cliente Servitaxi");
 
         LayoutInflater inflater = LayoutInflater.from(this);
 
@@ -190,7 +525,7 @@ public class Login_2 extends AppCompatActivity {
                         /*Desactivo el boton de inicio de Sesion
                          * para que el usuario no este manipulando*/
 
-                        if(TextUtils.isEmpty(etxtEmailInicio.getText().toString())){
+                        if (TextUtils.isEmpty(etxtEmailInicio.getText().toString())) {
 
                             Snackbar.make(layoutPrincipal,
                                     "Por favor ingrese una direccion de correo " +
@@ -200,7 +535,7 @@ public class Login_2 extends AppCompatActivity {
                             return;
                         }
 
-                        if(TextUtils.isEmpty(etxtContrasenaInicio.getText().toString())){
+                        if (TextUtils.isEmpty(etxtContrasenaInicio.getText().toString())) {
 
                             Snackbar.make(layoutPrincipal,
                                     "Por favor ingrese contrasena"
@@ -209,7 +544,7 @@ public class Login_2 extends AppCompatActivity {
                             return;
                         }
 
-                        if(etxtContrasenaInicio.getText().toString().length() < 6){
+                        if (etxtContrasenaInicio.getText().toString().length() < 6) {
 
                             Snackbar.make(layoutPrincipal,
                                     "Contrasena demasiado corta ",
@@ -238,7 +573,7 @@ public class Login_2 extends AppCompatActivity {
                             public void onFailure(@NonNull Exception e) {
                                 dialogoEspera.dismiss();
                                 Snackbar.make(layoutPrincipal,
-                                        "Error" +e.getMessage(),
+                                        "Error" + e.getMessage(),
                                         Snackbar.LENGTH_SHORT).show();
 
                                 btnSignIn.setEnabled(true);
@@ -259,7 +594,8 @@ public class Login_2 extends AppCompatActivity {
     }
 
     private void mostrarVentanaRegistro() {
-        AlertDialog.Builder dialog=  new AlertDialog.Builder(this);
+
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Registrar Conductor");
         dialog.setMessage("Registro de Conductor ServiTaxi");
 
@@ -274,8 +610,8 @@ public class Login_2 extends AppCompatActivity {
         final MaterialEditText etxtContrasena = register_Layout.findViewById(
                 R.id.etxtContrasena);
 
-        final MaterialEditText etxtTelefono = register_Layout.findViewById(
-                R.id.etxtTelefono);
+        final MaterialEditText etxtApellido = register_Layout.findViewById(
+                R.id.etxtApellido);
 
         final MaterialEditText etxtNombre = register_Layout.findViewById(
                 R.id.etxtNombre);
@@ -287,7 +623,7 @@ public class Login_2 extends AppCompatActivity {
             public void onClick(DialogInterface dialogInterface, int i) {
                 dialogInterface.dismiss();
 
-                if(TextUtils.isEmpty(etxtEmail.getText().toString())){
+                if (TextUtils.isEmpty(etxtEmail.getText().toString())) {
 
                     Snackbar.make(layoutPrincipal,
                             "Por favor ingrese una direccion de correo " +
@@ -297,7 +633,7 @@ public class Login_2 extends AppCompatActivity {
                     return;
                 }
 
-                if(TextUtils.isEmpty(etxtContrasena.getText().toString())){
+                if (TextUtils.isEmpty(etxtContrasena.getText().toString())) {
 
                     Snackbar.make(layoutPrincipal,
                             "Por favor ingrese contrasena"
@@ -307,7 +643,7 @@ public class Login_2 extends AppCompatActivity {
                 }
 
 
-                if(etxtContrasena.getText().toString().length() < 6){
+                if (etxtContrasena.getText().toString().length() < 4) {
 
                     Snackbar.make(layoutPrincipal,
                             "Por favor ingrese una contrasena con mas de " +
@@ -317,7 +653,7 @@ public class Login_2 extends AppCompatActivity {
                     return;
                 }
 
-                if(TextUtils.isEmpty(etxtNombre.getText().toString())){
+                if (TextUtils.isEmpty(etxtNombre.getText().toString())) {
 
                     Snackbar.make(layoutPrincipal,
                             "Por favor ingrese su Nombre ",
@@ -326,8 +662,7 @@ public class Login_2 extends AppCompatActivity {
                     return;
                 }
 
-
-                if(TextUtils.isEmpty(etxtTelefono.getText().toString())){
+                if (TextUtils.isEmpty(etxtApellido.getText().toString())) {
 
                     Snackbar.make(layoutPrincipal,
                             "Por favor ingrese su telefono de celular ",
@@ -335,61 +670,115 @@ public class Login_2 extends AppCompatActivity {
 
                     return;
                 }
+                mapa = new HashMap<>();
 
-                auth.createUserWithEmailAndPassword(
-                        etxtEmail.getText().toString(),
-                        etxtContrasena.getText().toString()
-                )
-                        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                mapa.put("correo", etxtEmail.getText().toString());
+
+                mapa.put("clave", etxtContrasena.getText().toString());
+
+                mapa.put("nombre", etxtNombre.getText().toString());
+
+                mapa.put("apellido", etxtApellido.getText().toString());
+
+                //region RegistrarCliente
+
+                VolleyPeticion<MensajeBackJson> registrar = Conexion.registrarCliente(
+                        getApplicationContext(),
+                        mapa,
+                        new Response.Listener<MensajeBackJson>() {
                             @Override
-                            public void onSuccess(AuthResult authResult) {
-                                //Guardar Usuario en la base de datos.
+                            public void onResponse(MensajeBackJson response) {
 
-                                Cliente cliente = new Cliente();
+                                if (response != null && response.siglas.equalsIgnoreCase("FD")) {
 
-                                cliente.setEmail(etxtEmail.getText().toString());
-                                cliente.setPassword(etxtContrasena.getText().toString());
-                                cliente.setNombre(etxtNombre.getText().toString());
-                                cliente.setTelefono(etxtTelefono.getText().toString());
+                                    Toast.makeText(layoutPrincipal.getContext(), response.mensaje, Toast.LENGTH_SHORT).show();
 
-                                //Usamos al email como llave primaria.
-                                clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                                        .setValue(cliente)
-                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                            @Override
-                                            public void onSuccess(Void aVoid) {
+                                    btnSignIn.setEnabled(true);
 
-                                                Snackbar.make(layoutPrincipal,
-                                                        "Cliente Registrado correctamente",
-                                                        Snackbar.LENGTH_SHORT ).show();
+                                    Log.e("ERROR", response.mensaje);
 
-                                            }
-                                        })
-                                        .addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
+                                    return;
 
-                                                Snackbar.make(layoutPrincipal,
-                                                        "Cliente no registrado " + e.getMessage(),
-                                                        Snackbar.LENGTH_SHORT).show();
-                                            }
-                                        });
+                                } else {
+
+                                    auth.createUserWithEmailAndPassword(
+                                            etxtEmail.getText().toString(),
+                                            etxtContrasena.getText().toString()
+                                    )
+                                            .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                @Override
+                                                public void onSuccess(AuthResult authResult) {
+
+                                                    Cliente cliente = new Cliente();
+
+                                                    cliente.setEmail(etxtEmail.getText().toString());
+                                                    cliente.setPassword(etxtContrasena.getText().toString());
+                                                    cliente.setNombre(etxtNombre.getText().toString());
+                                                    cliente.setApellidos(etxtApellido.getText().toString());
+
+                                                    //Usamos al email como llave primaria.
+                                                    clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                                            .setValue(cliente)
+                                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                                @Override
+                                                                public void onSuccess(Void aVoid) {
+
+                                                                    Snackbar.make(layoutPrincipal,
+                                                                            "Cliente Registrado correctamente",
+                                                                            Snackbar.LENGTH_SHORT).show();
+                                                                }
+                                                            })
+                                                            .addOnFailureListener(new OnFailureListener() {
+                                                                @Override
+                                                                public void onFailure(@NonNull Exception e) {
+
+                                                                    Snackbar.make(layoutPrincipal,
+                                                                            "Cliente no registrado " + e.getMessage(),
+                                                                            Snackbar.LENGTH_SHORT).show();
+
+                                                                    return;
+                                                                }
+                                                            });
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Snackbar.make(layoutPrincipal,
+                                                    "Cliente no registrado" + e.getMessage(),
+                                                    Snackbar.LENGTH_SHORT).show();
+
+                                            return;
+                                        }
+
+                                    });
+
+                                    Toast.makeText(getApplicationContext(),
+                                            "Se ha guardado correctamente",
+                                            Toast.LENGTH_SHORT).show();
+
+                                }
                             }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Snackbar.make(layoutPrincipal,
-                                "Cliente no registrado" + e.getMessage(),
-                                Snackbar.LENGTH_SHORT ).show();
-                    }
-                });
+                        },
+                        new Response.ErrorListener() {
 
-                Toast.makeText(getApplicationContext(),
-                        "Se ha guardado correctamente",
-                        Toast.LENGTH_SHORT).show();
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+
+                                VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                                Log.e("Error", error.toString());
+
+                                return;
+                            }
+
+                        }
+                );
+
+                requestQueue.add(registrar);
+                //endregion
+
             }
         });
-
 
         dialog.setNegativeButton("CANCELAR", new DialogInterface.OnClickListener() {
             @Override
@@ -400,5 +789,112 @@ public class Login_2 extends AppCompatActivity {
 
         dialog.show();
     }
+
     //endregion
+    private boolean registrarCliente(
+            @NonNull HashMap<String, String> map) {
+
+        VolleyPeticion<MensajeBackJson> registrar = Conexion.registrarCliente(
+                getApplicationContext(),
+                map,
+                new Response.Listener<MensajeBackJson>() {
+                    @Override
+                    public void onResponse(MensajeBackJson response) {
+
+                        if (response != null && response.siglas.equalsIgnoreCase("FD")) {
+
+                            Toast.makeText(layoutPrincipal.getContext(), response.mensaje, Toast.LENGTH_SHORT).show();
+
+                            btnSignIn.setEnabled(true);
+
+                            Log.e("ERROR", response.mensaje);
+
+                            return;
+
+                        } else {
+
+                            Toast.makeText(layoutPrincipal.getContext(), response.mensaje, Toast.LENGTH_SHORT).show();
+
+                            guardo = true;
+
+                            Log.e("BOOLEAAAAAAAAAAAAN", guardo + "");
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                        VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                        Log.e("Error", error.toString());
+
+                        Toast.makeText(layoutPrincipal.getContext(), "Fallo en la operacion, estamos en Error Listener", Toast.LENGTH_SHORT).show();
+
+                        return;
+                    }
+
+                }
+        );
+        requestQueue.add(registrar);
+
+        Log.e("BOOLEAAAAAAAAAAAAN", guardo + "");
+
+        return guardo;
+    }
+
+    private boolean iniciarSesionCliente(
+            @NonNull HashMap<String, String> map) {
+
+        VolleyPeticion<ClienteBackJson> inicio = Conexion.iniciarSesion(
+                getApplicationContext(),
+                map,
+                new Response.Listener<ClienteBackJson>() {
+                    @Override
+                    public void onResponse(ClienteBackJson response) {
+
+                        if (response != null
+                                && response.siglas.equalsIgnoreCase("ND")) {
+
+                            Snackbar.make(layoutPrincipal,
+                                    "Error " + response.mensaje,
+                                    Snackbar.LENGTH_SHORT
+                            ).show();
+
+                            btnSignIn.setEnabled(true);
+
+                            return;
+
+                        } else {
+
+                            Snackbar.make(layoutPrincipal,
+                                    "Bienvenido, " + response.nombre,
+                                    Snackbar.LENGTH_SHORT).show();
+
+                            inicioSesion = true;
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                        VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                        Log.e("Error", error.toString());
+
+                        Snackbar.make(layoutPrincipal,
+                                errors.errorMessage,
+                                Snackbar.LENGTH_SHORT).show();
+
+                        return;
+                    }
+                }
+        );
+
+        requestQueue.add(inicio);
+
+        return inicioSesion;
+    }
 }

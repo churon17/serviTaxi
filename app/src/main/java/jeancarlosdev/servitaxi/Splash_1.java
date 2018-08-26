@@ -46,7 +46,8 @@ public class Splash_1 extends AppCompatActivity {
 
         }
 
-
+        startActivity(new Intent(getApplicationContext(), Login_2.class));
+    /*
         if(AccessToken.getCurrentAccessToken() != null){
 
             util.dataFacebook();
@@ -55,6 +56,7 @@ public class Splash_1 extends AppCompatActivity {
 
             util.hiloSplashScreen(new Intent(this, Login_2.class));
         }
+        */
     }
 
 

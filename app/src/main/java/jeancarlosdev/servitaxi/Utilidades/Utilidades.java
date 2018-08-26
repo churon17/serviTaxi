@@ -10,12 +10,16 @@ import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import jeancarlosdev.servitaxi.Bienvenido;
 
 
-public class Utilidades {
+public class Utilidades  extends StringUtils{
 
     private String nombre = "";
 
@@ -23,13 +27,30 @@ public class Utilidades {
 
     private Context contexto;
 
+    String[] arregloRetornar = new String[2];
+
+
     public Utilidades(Context contexto) {
 
         this.contexto = contexto;
 
     }
 
-    public  void dataFacebook(){
+    public static String formatoFecha(Date date){
+        SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String strFecha = "";
+
+        try {
+            strFecha = formato.format(date);
+            return strFecha;
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+            return "";
+        }
+    }
+
+    public  String[] dataFacebook(){
 
         GraphRequest request = GraphRequest.newMeRequest(
                 AccessToken.getCurrentAccessToken(),
@@ -37,18 +58,23 @@ public class Utilidades {
                     @Override
                     public void onCompleted(JSONObject object, GraphResponse response) {
 
-                        Intent intencion = new Intent(contexto, Bienvenido.class);
+                        //Intent intencion = new Intent(contexto, Bienvenido.class);
                         try {
 
                             nombre = object.getString("name");
 
                             email = object.getString("email");
 
-                            intencion.putExtra("nombre", nombre);
 
-                            intencion.putExtra("email", email);
+                            arregloRetornar[0] = nombre;
 
-                            contexto.startActivity(intencion);
+                            arregloRetornar[1] = email;
+
+                            //intencion.putExtra("nombre", nombre);
+
+                            //intencion.putExtra("email", email);
+
+                            //contexto.startActivity(intencion);
 
                         }catch (Exception e){
 
@@ -60,6 +86,8 @@ public class Utilidades {
         parameters.putString("fields", "email,name");
         request.setParameters(parameters);
         request.executeAsync();
+
+        return  arregloRetornar;
     }
 
 

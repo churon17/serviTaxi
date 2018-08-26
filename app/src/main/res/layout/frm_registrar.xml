@@ -49,7 +49,7 @@
 
         <com.rengwuxian.materialedittext.MaterialEditText
             android:id="@+id/etxtNombre"
-            android:hint="Ingrese su nombre"
+            android:hint="Ingrese sus nombres"
             android:inputType="text"
             android:text=""
             android:textColor="@color/colorPrimary"
@@ -65,8 +65,8 @@
             />
 
         <com.rengwuxian.materialedittext.MaterialEditText
-            android:id="@+id/etxtTelefono"
-            android:hint="Telefono"
+            android:id="@+id/etxtApellido"
+            android:hint="Ingrese sus apellidos"
             android:inputType="number"
             android:text=""
             android:textColor="@color/colorPrimary"

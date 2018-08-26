@@ -6,13 +6,13 @@ package jeancarlosdev.servitaxi.Modelos;
 
 public class Cliente {
 
-    private String nombre;
+    private String nombres;
 
     private String email;
 
     private String password;
 
-    private String telefono;
+    private String apellidos;
 
     public Cliente() {
     }
@@ -20,19 +20,19 @@ public class Cliente {
     public Cliente(String nombre,
                    String email,
                    String password,
-                   String telefono) {
-        this.nombre = nombre;
+                   String apellidos) {
+        this.nombres = nombre;
         this.email = email;
         this.password = password;
-        this.telefono = telefono;
+        this.apellidos = apellidos;
     }
 
     public String getNombre() {
-        return nombre;
+        return nombres;
     }
 
     public void setNombre(String nombre) {
-        this.nombre = nombre;
+        this.nombres = nombre;
     }
 
     public String getEmail() {
@@ -51,11 +51,11 @@ public class Cliente {
         this.password = password;
     }
 
-    public String getTelefono() {
-        return telefono;
+    public String getApellidos() {
+        return apellidos;
     }
 
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
+    public void setApellidos(String apellidos) {
+        this.apellidos = apellidos;
     }
 }

@@ -148,8 +148,6 @@ public class Bienvenido extends AppCompatActivity
 
         mapFragment.getMapAsync(this);
 
-
-
         //Geo fire.
 
         ref = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
