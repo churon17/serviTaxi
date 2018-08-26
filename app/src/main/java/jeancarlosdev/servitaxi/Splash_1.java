@@ -25,7 +25,7 @@ public class Splash_1 extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.frm_splash_1);
+       // setContentView(R.layout.frm_splash_1);
 
         inicializarSDKFacebook();
 

@@ -22,7 +22,7 @@ public class Conexion {
                                                                 @NonNull Response.Listener<ClienteBackJson> response_Listener,
                                                                 @NonNull Response.ErrorListener errorListener){
 
-        final String url = API_URL + "chofer/iniciarSesion";
+        final String url = API_URL + "cliente/iniciarSesion";
 
         VolleyPeticion request = new VolleyPeticion(contexto,
                 Request.Method.POST, //Tipo de metodo.
@@ -37,14 +37,13 @@ public class Conexion {
 
         return request;
     }
-    //https://servitaxi.000webhostapp.com/ServicioWEB/index.php/chofer/iniciarSesion
 
     public static VolleyPeticion<MensajeBackJson> registrarCliente(@NonNull final Context contexto,
                                                                    @NonNull final HashMap mapa,
                                                                    @NonNull Response.Listener<MensajeBackJson> response_Listener,
                                                                    @NonNull Response.ErrorListener errorListener){
 
-        final String url = API_URL + "chofer/guardar";
+        final String url = API_URL + "cliente/guardar";
 
         VolleyPeticion request = new VolleyPeticion(contexto,
                 Request.Method.POST,

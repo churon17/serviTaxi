@@ -2,8 +2,8 @@ package jeancarlosdev.servitaxi.Modelos;
 
 public class MensajeBackJson {
 
-    public String mensaje;
+    public String Mensaje;
 
-    public String siglas;
+    public String Siglas;
 
 }

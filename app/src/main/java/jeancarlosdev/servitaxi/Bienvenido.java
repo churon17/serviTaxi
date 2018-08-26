@@ -1,6 +1,7 @@
 package jeancarlosdev.servitaxi;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -23,8 +24,10 @@ import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.login.LoginManager;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
@@ -51,7 +54,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 
+import io.paperdb.Paper;
 import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
 import jeancarlosdev.servitaxi.Modelos.FCMResponse;
@@ -60,6 +65,7 @@ import jeancarlosdev.servitaxi.Modelos.Sender;
 import jeancarlosdev.servitaxi.Modelos.Token;
 import jeancarlosdev.servitaxi.Remote.IFCMService;
 import jeancarlosdev.servitaxi.Utilidades.CustomInfoWindow;
+import jeancarlosdev.servitaxi.Utilidades.TransformarImagen;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -69,8 +75,7 @@ public class Bienvenido extends AppCompatActivity
         OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener
-{
+        LocationListener {
 
     //region Atributos
 
@@ -122,7 +127,30 @@ public class Bienvenido extends AppCompatActivity
 
     DatabaseReference driverAvailable;
 
+    //Load Data From Last Intent
+
+    String url, nombre, email;
+
     //endregion
+
+
+
+    private void cerrarSesion() {
+
+        Paper.init(this);
+        Paper.book().destroy();
+
+        LoginManager.getInstance().logOut();
+
+        FirebaseAuth.getInstance().signOut();
+
+        Intent intent = new Intent(Bienvenido.this, Login_2.class);
+
+        startActivity(intent);
+
+        finish();
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,8 +170,39 @@ public class Bienvenido extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        View hView = navigationView.getHeaderView(0);
+
+        ImageView imagen= hView.findViewById(R.id.imageView);
+
+        TextView textoNombre=  hView.findViewById(R.id.Nombre);
+
+        TextView textoCorreo=  hView.findViewById(R.id.correo);
+
+//        Log.e("Nombre",getIntent().getExtras().getString("nombre") );
+
+        if(getIntent().getExtras().getString("url")!= null){
+
+            url = getIntent().getExtras().getString("url");
+
+            Picasso.with(this).load(url).transform(new TransformarImagen()).into(imagen);
+        }
+
+        if(getIntent().getExtras().getString("nombre")!= null){
+
+            nombre = getIntent().getExtras().getString("nombre");
+
+            textoNombre.setText(nombre);
+        }
+
+        if(getIntent().getExtras().getString("email")!= null){
+
+            email = getIntent().getExtras().getString("email");
+
+            textoCorreo.setText(email);
+        }
+
         //Maps
-        mapFragment = (SupportMapFragment)getSupportFragmentManager()
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
         mapFragment.getMapAsync(this);
@@ -154,7 +213,7 @@ public class Bienvenido extends AppCompatActivity
 
         geoFire = new GeoFire(ref);
 
-        imgExpandable = (ImageView)findViewById(R.id.imgExpandable);
+        imgExpandable = (ImageView) findViewById(R.id.imgExpandable);
 
         mBottomSheet = BottomSheetRiderFragment.newInstance("Rider Bottom sheet");
 
@@ -162,10 +221,12 @@ public class Bienvenido extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 mBottomSheet.show(getSupportFragmentManager()
-                        ,mBottomSheet.getTag());
+                        , mBottomSheet.getTag());
 
             }
         });
+
+
 
         btnPickUpRequest = findViewById(R.id.btnPickUpRequest);
 
@@ -173,9 +234,9 @@ public class Bienvenido extends AppCompatActivity
             @Override
             public void onClick(View view) {
 
-                if(!conductorEncontrado){
+                if (!conductorEncontrado) {
                     requestPickUpHere(FirebaseAuth.getInstance().getCurrentUser().getUid());
-                }else{
+                } else {
                     sendRequestToDriver(driver_idGlob);
                 }
 
@@ -189,9 +250,11 @@ public class Bienvenido extends AppCompatActivity
 
     private void updateFirebaseToken() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
+
         DatabaseReference tokens = db.getReference(Common.token_tb1);
 
         Token token = new Token(FirebaseInstanceId.getInstance().getToken());
+
         tokens.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(token);
 
     }
@@ -206,7 +269,7 @@ public class Bienvenido extends AppCompatActivity
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
 
-                        for (DataSnapshot postSnapShot:dataSnapshot.getChildren()){
+                        for (DataSnapshot postSnapShot : dataSnapshot.getChildren()) {
 
                             Token token = postSnapShot
                                     .getValue(Token.class); //Obtener Token de database con key
@@ -232,13 +295,13 @@ public class Bienvenido extends AppCompatActivity
                                         public void onResponse(Call<FCMResponse> call,
                                                                Response<FCMResponse> response) {
 
-                                            if(response.body().success == 1){
+                                            if (response.body().success == 1) {
 
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
                                                 conductorEncontrado = false;
                                                 driver_idGlob = "";
                                                 btnPickUpRequest.setText("Solicitar Taxi");
-                                            }else {
+                                            } else {
 
                                                 Toast.makeText(Bienvenido.this, "La Peticion Fallo", Toast.LENGTH_SHORT).show();
                                             }
@@ -267,13 +330,13 @@ public class Bienvenido extends AppCompatActivity
         mGeoFire.setLocation(uid, new GeoLocation(mUltimaUbicacion.getLatitude()
                 , mUltimaUbicacion.getLongitude()));
 
-        if(mUserMarker.isVisible()){
+        if (mUserMarker.isVisible()) {
 
             mUserMarker.remove();
 
         }
 
-        mUserMarker =  mMap.addMarker(new MarkerOptions()
+        mUserMarker = mMap.addMarker(new MarkerOptions()
                 .title("PickUp Here")
                 .snippet("")
                 .position(new LatLng(mUltimaUbicacion.getLatitude(),
@@ -284,9 +347,8 @@ public class Bienvenido extends AppCompatActivity
         mUserMarker.showInfoWindow();
 
         btnPickUpRequest.setText("Encontrando tu Taxi....");
-        
-        findDrivers();
 
+        findDrivers();
     }
 
     private void findDrivers() {
@@ -322,7 +384,7 @@ public class Bienvenido extends AppCompatActivity
             @Override
             public void onGeoQueryReady() {
                 //Si no encuentra un conductor, aumentar radio
-                if(!conductorEncontrado){
+                if (!conductorEncontrado) {
                     radio++;
                     findDrivers();
                 }
@@ -340,13 +402,13 @@ public class Bienvenido extends AppCompatActivity
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
 
-        switch (requestCode){
+        switch (requestCode) {
 
             case PERMISSION_REQUEST_CODE:
-                if(grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    if(checkPlayServices()){
+                    if (checkPlayServices()) {
 
                         buildGoogleApiClient();
                         createLocationRequest();
@@ -358,21 +420,20 @@ public class Bienvenido extends AppCompatActivity
     }
 
     private void setUpLocation() {
-        if(ActivityCompat.checkSelfPermission(this,
+        if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
                 .PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager
-                .PERMISSION_GRANTED)
-        {
+                .PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION
             }, PERMISSION_REQUEST_CODE);
-        }else {
+        } else {
 
-            if(checkPlayServices()) {
+            if (checkPlayServices()) {
 
                 buildGoogleApiClient();
                 createLocationRequest();
@@ -382,13 +443,12 @@ public class Bienvenido extends AppCompatActivity
     }
 
     private void displayLocation() {
-        if(ActivityCompat.checkSelfPermission(this,
+        if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
                 .PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager
-                .PERMISSION_GRANTED)
-        {
+                .PERMISSION_GRANTED) {
 
             return;
         }
@@ -396,7 +456,7 @@ public class Bienvenido extends AppCompatActivity
                 FusedLocationApi.
                 getLastLocation(mGoogleApiClient);
 
-        if(mUltimaUbicacion != null){
+        if (mUltimaUbicacion != null) {
 
             driverAvailable = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
             driverAvailable.addValueEventListener(new ValueEventListener() {
@@ -416,33 +476,32 @@ public class Bienvenido extends AppCompatActivity
             });
 
 
-                final double latitude = mUltimaUbicacion.getLatitude();
-                final double longitud = mUltimaUbicacion.getLongitude();
+            final double latitude = mUltimaUbicacion.getLatitude();
+            final double longitud = mUltimaUbicacion.getLongitude();
 
-                if(mUserMarker != null)
-                {
-                    mUserMarker.remove(); //Remove marker exist.
-                }
+            if (mUserMarker != null) {
+                mUserMarker.remove(); //Remove marker exist.
+            }
 
-                mUserMarker = mMap.addMarker(new MarkerOptions().
-                        icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
-                        .position(new LatLng(latitude, longitud))
-                        .title("Usted"));
+            mUserMarker = mMap.addMarker(new MarkerOptions().
+                    icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
+                    .position(new LatLng(latitude, longitud))
+                    .title("Usted"));
 
-                //Mover la camara del cellPhone a esa posicion.
+            //Mover la camara del cellPhone a esa posicion.
 
-                mMap.animateCamera(CameraUpdateFactory.
-                        newLatLngZoom(
-                                new LatLng(latitude, longitud),
-                                17.0f));
+            mMap.animateCamera(CameraUpdateFactory.
+                    newLatLngZoom(
+                            new LatLng(latitude, longitud),
+                            17.0f));
 
-                //Dibujar la animation de rotar el carrito.
+            //Dibujar la animation de rotar el carrito.
 
-                rotateMarker(mUserMarker, -360,  mMap);
+            rotateMarker(mUserMarker, -360, mMap);
 
-                loadAllAvailableDrivers();
+            loadAllAvailableDrivers();
 
-        }else{
+        } else {
 
             Log.d("ERROR", "CAN NOT GET YOUR LOCATION");
         }
@@ -455,15 +514,15 @@ public class Bienvenido extends AppCompatActivity
     private void loadAllAvailableDrivers() {
 
         /*
-        * Primero vamos a borrar todos los marcadores, tanto como los conductores
-        * como el nuestro
-        * */
+         * Primero vamos a borrar todos los marcadores, tanto como los conductores
+         * como el nuestro
+         * */
 
         mMap.clear();
 
         /*
-        * Ahora agregamos nuevamenye nuestra ubicacion.
-        * */
+         * Ahora agregamos nuevamente nuestra ubicacion.
+         * */
 
         mMap.addMarker(new MarkerOptions().
                 icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
@@ -479,7 +538,7 @@ public class Bienvenido extends AppCompatActivity
 
         GeoQuery geoQuery = gf.queryAtLocation
                 (new GeoLocation(mUltimaUbicacion.getLatitude(),
-                        mUltimaUbicacion.getLongitude()),
+                                mUltimaUbicacion.getLongitude()),
                         distance);
 
         geoQuery.removeAllListeners();
@@ -492,25 +551,26 @@ public class Bienvenido extends AppCompatActivity
                         getInstance()
                         .getReference(Common.conductor_tb1).child(key)
                         .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                Cliente cliente = dataSnapshot.getValue(Cliente.class);
+                                                            @Override
+                                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                                Cliente cliente = dataSnapshot.getValue(Cliente.class);
 
-                                mMap.addMarker(
-                                        new MarkerOptions().
-                                                position(new LatLng(location.latitude,
-                                                        location.longitude))
-                                                .flat(true)
-                                                .title(cliente.getNombre())
-                                                .icon(BitmapDescriptorFactory
-                                                        .fromResource(R.drawable.car)));
-                            }
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                                                mMap.addMarker(
+                                                                        new MarkerOptions().
+                                                                                position(new LatLng(location.latitude,
+                                                                                        location.longitude))
+                                                                                .flat(true)
+                                                                                .title(cliente.getNombre())
+                                                                                .icon(BitmapDescriptorFactory
+                                                                                        .fromResource(R.drawable.car)));
+                                                            }
 
-                            }
-                        }
-                );
+                                                            @Override
+                                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                            }
+                                                        }
+                        );
             }
 
             @Override
@@ -525,7 +585,7 @@ public class Bienvenido extends AppCompatActivity
 
             @Override
             public void onGeoQueryReady() {
-                if (distance <= LIMIT){
+                if (distance <= LIMIT) {
                     distance++;
                     loadAllAvailableDrivers();
                 }
@@ -565,13 +625,13 @@ public class Bienvenido extends AppCompatActivity
 
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
 
-        if(resultCode!= ConnectionResult.SUCCESS){
+        if (resultCode != ConnectionResult.SUCCESS) {
 
-            if(GooglePlayServicesUtil.isUserRecoverableError(resultCode)){
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
                 GooglePlayServicesUtil.getErrorDialog(resultCode,
                         this,
                         PLAY_SERVICE_REQUEST_CODE).show();
-            }else{
+            } else {
                 Toast.makeText(this, "this device is not supported",
                         Toast.LENGTH_SHORT).show();
 
@@ -579,7 +639,7 @@ public class Bienvenido extends AppCompatActivity
             }
             return false;
         }
-        return  true;
+        return true;
     }
 
 
@@ -607,7 +667,15 @@ public class Bienvenido extends AppCompatActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
+        if(id== R.id.cerrarSesion){
+
+            Log.e("Si cerro", "SI CERRAR SESION");
+
+            //cerrarSesion();
+
+            return  true;
+        }
+
         if (id == R.id.action_settings) {
             return true;
         }
@@ -631,8 +699,9 @@ public class Bienvenido extends AppCompatActivity
 
         } else if (id == R.id.nav_share) {
 
-        } else if (id == R.id.nav_send) {
+        } else if (id == R.id.cerrarSesion) {
 
+                cerrarSesion();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -670,15 +739,15 @@ public class Bienvenido extends AppCompatActivity
             public void run() {
                 long elapsed = SystemClock.uptimeMillis() - start;
 
-                float t = interpolator.getInterpolation((float)elapsed/duration);
+                float t = interpolator.getInterpolation((float) elapsed / duration);
 
-                float rot = t*i+(1-t)*startRotation;
+                float rot = t * i + (1 - t) * startRotation;
 
-                mCurrent.setRotation( -rot>360? rot/1 : rot);
+                mCurrent.setRotation(-rot > 360 ? rot / 1 : rot);
 
-                if(t<1.0){
+                if (t < 1.0) {
 
-                    handler.postDelayed(this,16 );
+                    handler.postDelayed(this, 16);
 
                 }
 
@@ -695,28 +764,26 @@ public class Bienvenido extends AppCompatActivity
 
     private void startLocationUpdates() {
 
-        if(ActivityCompat.checkSelfPermission(this,
+        if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
                 .PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager
-                .PERMISSION_GRANTED)
-        {
+                .PERMISSION_GRANTED) {
 
             return;
         }
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
-                mLocationRequest,this
+                mLocationRequest, this
         );
-
 
 
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-            mGoogleApiClient.connect();
+        mGoogleApiClient.connect();
     }
 
     @Override

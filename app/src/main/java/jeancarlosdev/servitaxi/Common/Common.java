@@ -16,6 +16,13 @@ public class Common {
     public static final String token_tb1 = "Tokens";
 
     public static final String fcmUrl = "https:/fcm.googleapis.com/";
+    public static String cliente =  "usr";
+    public static String password = "pwd";
+    public static String nombre =  "name";
+    public static String imagen =  "img";
+
+
+
 
     public static IFCMService getFCMService(){
 

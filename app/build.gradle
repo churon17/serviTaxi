@@ -20,6 +20,10 @@ android {
 }
 
 dependencies {
+
+    implementation 'com.squareup.picasso:picasso:2.5.2'
+
+    implementation 'io.paperdb:paperdb:2.6'
     implementation 'com.android.volley:volley:1.1.1'
     implementation 'org.apache.commons:commons-lang3:3.6'
     implementation 'com.google.code.gson:gson:2.6.2'
