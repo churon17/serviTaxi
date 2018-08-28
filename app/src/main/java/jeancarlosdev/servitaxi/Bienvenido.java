@@ -1,6 +1,7 @@
 package jeancarlosdev.servitaxi;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -10,7 +11,10 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -320,6 +324,45 @@ public class Bienvenido extends AppCompatActivity
 
                     }
                 });
+    }
+
+    private void mostrarAgregarFavs() {
+
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Agregar a Favoritos?");
+        dialog.setMessage("Desea agregar la ubicación actual a Favoritos?");
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        View register_Layout = inflater.
+                inflate(R.layout.frm_agregar_favoritos, null);
+
+        dialog.setView(register_Layout);
+
+        dialog.setPositiveButton("Agregar",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        agregarFav();
+
+                        dialogInterface.dismiss();
+                    }
+        });
+
+        dialog.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialog.show();
+
+    }
+
+    private void agregarFav() {
+
     }
 
     private void requestPickUpHere(String uid) {
@@ -676,10 +719,6 @@ public class Bienvenido extends AppCompatActivity
             return  true;
         }
 
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -689,15 +728,10 @@ public class Bienvenido extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
+        if (id == R.id.nav_favoritos) {
+            mostrarVentanaFavs();
+        } else if (id == R.id.nav_quienes) {
+            mostrarVentanaQuien();
 
         } else if (id == R.id.cerrarSesion) {
 
@@ -707,6 +741,62 @@ public class Bienvenido extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void mostrarVentanaQuien() {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        View register_Layout = inflater.
+                inflate(R.layout.frm_quienes, null);
+
+        dialog.setView(register_Layout);
+
+        dialog.setPositiveButton("Aceptar",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                });
+        dialog.show();
+    }
+
+    private void mostrarVentanaFavs() {
+
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Favoritos");
+        dialog.setMessage("Lugares Favoritos");
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        View register_Layout = inflater.
+                inflate(R.layout.frm_favoritos, null);
+
+        /*
+        AQUI CARGA TODOS LOS FAVS
+         */
+
+        dialog.setView(register_Layout);
+
+        dialog.setPositiveButton("Agregar",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        mostrarAgregarFavs();
+                        dialogInterface.dismiss();
+                    }
+                });
+
+        dialog.setNegativeButton("Atras", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialog.show();
     }
 
     @Override

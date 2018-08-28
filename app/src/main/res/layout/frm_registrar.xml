@@ -25,9 +25,9 @@
             android:layout_height="wrap_content"
 
             app:met_singleLineEllipsis="true"
-            app:met_baseColor="@color/colorPrimary"
+            app:met_baseColor="@color/colorSecondary"
             app:met_floatingLabel="highlight"
-            app:met_primaryColor="@color/colorPrimary"
+            app:met_primaryColor="@color/colorSecondary"
             />
 
         <com.rengwuxian.materialedittext.MaterialEditText
@@ -42,9 +42,9 @@
             android:layout_height="wrap_content"
 
             app:met_singleLineEllipsis="true"
-            app:met_baseColor="@color/colorPrimary"
+            app:met_baseColor="@color/colorSecondary"
             app:met_floatingLabel="highlight"
-            app:met_primaryColor="@color/colorPrimary"
+            app:met_primaryColor="@color/colorSecondary"
             />
 
         <com.rengwuxian.materialedittext.MaterialEditText
@@ -59,15 +59,15 @@
             android:layout_height="wrap_content"
 
             app:met_singleLineEllipsis="true"
-            app:met_baseColor="@color/colorPrimary"
+            app:met_baseColor="@color/colorSecondary"
             app:met_floatingLabel="highlight"
-            app:met_primaryColor="@color/colorPrimary"
+            app:met_primaryColor="@color/colorSecondary"
             />
 
         <com.rengwuxian.materialedittext.MaterialEditText
             android:id="@+id/etxtApellido"
             android:hint="Ingrese sus apellidos"
-            android:inputType="number"
+            android:inputType="text"
             android:text=""
             android:textColor="@color/colorPrimary"
             android:textColorHint="@color/colorPrimary"
@@ -76,9 +76,9 @@
             android:layout_height="wrap_content"
 
             app:met_singleLineEllipsis="true"
-            app:met_baseColor="@color/colorPrimary"
+            app:met_baseColor="@color/colorSecondary"
             app:met_floatingLabel="highlight"
-            app:met_primaryColor="@color/colorPrimary"
+            app:met_primaryColor="@color/colorSecondary"
             />
 
     </LinearLayout>

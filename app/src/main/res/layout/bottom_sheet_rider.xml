@@ -16,19 +16,19 @@
 
         <TextView
             android:layout_marginTop="10dp"
-            android:text="dasddddddddddddddddddddddddddddddddddddddddddddddddddddddddddsadasdasdasssssssssssssssssssssssssssssssssssssssssssssssss"
+            android:text="Info:"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <TextView
     android:layout_marginTop="10dp"
-            android:text="dasddddddddddddddddddddddddddddddddddddddddddddddddddddddddddsadasdasdasssssssssssssssssssssssssssssssssssssssssssssssss"
+            android:text="Jean Carlos Alarcón"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
 
         <TextView
-            android:text="dasddddddddddddddddddddddddddddddddddddddddddddddddddddddddddsadasdasdasssssssssssssssssssssssssssssssssssssssssssssssss"
+            android:text="Edgar Andrés Soto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"/>

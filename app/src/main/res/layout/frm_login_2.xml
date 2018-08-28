@@ -45,7 +45,7 @@
         <Button
             android:id="@+id/btnRegistrar"
             android:background="@drawable/btn_registrar"
-            android:textColor="@color/btnEffectColor"
+            android:textColor="@color/colorPrimary"
             android:text="REGISTRAR"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
