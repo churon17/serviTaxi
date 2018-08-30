@@ -31,6 +31,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.VolleyError;
 import com.facebook.login.LoginManager;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -60,14 +61,20 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
+import java.util.HashMap;
+
 import io.paperdb.Paper;
 import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
 import jeancarlosdev.servitaxi.Modelos.FCMResponse;
+import jeancarlosdev.servitaxi.Modelos.Favorito;
+import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
 import jeancarlosdev.servitaxi.Modelos.Notification;
 import jeancarlosdev.servitaxi.Modelos.Sender;
 import jeancarlosdev.servitaxi.Modelos.Token;
+import jeancarlosdev.servitaxi.Remote.Conexion;
 import jeancarlosdev.servitaxi.Remote.IFCMService;
+import jeancarlosdev.servitaxi.Remote.VolleyPeticion;
 import jeancarlosdev.servitaxi.Utilidades.CustomInfoWindow;
 import jeancarlosdev.servitaxi.Utilidades.TransformarImagen;
 import retrofit2.Call;
@@ -363,6 +370,35 @@ public class Bienvenido extends AppCompatActivity
 
     private void agregarFav() {
 
+        HashMap<String, String> mapa = new HashMap<>();
+        mapa.put("external", Common.external_id);
+        mapa.put("direccion", "Prueba");
+        mapa.put("latitud", String.valueOf(mUltimaUbicacion.getLatitude()));
+        mapa.put("longitud", String.valueOf(mUltimaUbicacion.getLongitude()));
+
+        Conexion.registrarFavorito(
+                getApplicationContext(),
+                mapa,
+                new com.android.volley.Response.Listener<MensajeBackJson>() {
+                    @Override
+                    public void onResponse(MensajeBackJson response) {
+                        if (response != null && ("FD".equalsIgnoreCase(response.Siglas)
+                                || "DNF".equalsIgnoreCase(response.Siglas))){
+                            Toast.makeText(Bienvenido.this, response.Mensaje, Toast.LENGTH_SHORT).show();
+                        }else{
+                            Toast.makeText(Bienvenido.this, "Se ha guardado correctamente", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new com.android.volley.Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("Error", error.toString());
+
+                        return;
+                    }
+                }
+        );
     }
 
     private void requestPickUpHere(String uid) {
@@ -778,6 +814,52 @@ public class Bienvenido extends AppCompatActivity
         AQUI CARGA TODOS LOS FAVS
          */
 
+        //HashMap<String, String> mapa = new HashMap<>();
+
+        Conexion.listarFavoritos(
+                getApplicationContext(),
+                Common.external_id,
+                new com.android.volley.Response.Listener<Favorito[]>() {
+                    @Override
+                    public void onResponse(Favorito[] response) {
+                        if (response != null) {
+                            for (Favorito fav: response){
+                                Log.e("DIRECCION: ", fav.direccion.toString());
+                            }
+    /**
+                            //Crea contenedor
+                            LinearLayout contenedor = new LinearLayout(getApplicationContext());
+                            contenedor.setLayoutParams(new LinearLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+                            contenedor.setOrientation(LinearLayout.VERTICAL);
+                            contenedor.setGravity(Gravity.CENTER);
+                            //Crea ImageView y TextView
+                            ImageView miImageView = new ImageView(getApplicationContext());
+                            TextView miTextView = new TextView(getApplicationContext());
+                            //Agrega propiedades al TextView.
+                            miTextView.setText("mi TextView");
+                            miTextView.setBackgroundColor(Color.BLUE);
+                            //Agrega imagen al ImageView.
+                            miImageView.setImageResource(R.mipmap.ic_launcher);
+
+                            //Agrega vistas al contenedor.
+                            contenedor.addView(miTextView);
+                            contenedor.addView(miImageView);
+     */
+                        } else {
+                            Toast.makeText(Bienvenido.this, "No posee ningún lugar favorito", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new com.android.volley.Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(Bienvenido.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+
+                        return;
+                    }
+                }
+        );
+
         dialog.setView(register_Layout);
 
         dialog.setPositiveButton("Agregar",
@@ -785,7 +867,6 @@ public class Bienvenido extends AppCompatActivity
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         mostrarAgregarFavs();
-                        dialogInterface.dismiss();
                     }
                 });
 

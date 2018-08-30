@@ -10,6 +10,7 @@ import com.android.volley.Response;
 import java.util.HashMap;
 
 import jeancarlosdev.servitaxi.Modelos.ClienteBackJson;
+import jeancarlosdev.servitaxi.Modelos.Favorito;
 import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
 
 
@@ -59,7 +60,44 @@ public class Conexion {
         return request;
     }
 
+    public static VolleyPeticion<Favorito[]> listarFavoritos(
+            @NonNull final Context context,
+            @NonNull final String id,
+            @NonNull Response.Listener<Favorito[]> responseListener,
+            @NonNull Response.ErrorListener errorListener
+    ){
+        final String url = API_URL + "cliente/favoritos/listarFavoritos" + id;
+        VolleyPeticion request = new VolleyPeticion(
+                context,
+                Request.Method.GET,
+                url,
+                responseListener,
+                errorListener
+        );
+        request.setResponseClass(Favorito[].class);
+        return request;
+    }
 
+    public static VolleyPeticion<MensajeBackJson> registrarFavorito(@NonNull final Context contexto,
+                                                                   @NonNull final HashMap mapa,
+                                                                   @NonNull Response.Listener<MensajeBackJson> response_Listener,
+                                                                   @NonNull Response.ErrorListener errorListener){
+
+        final String url = API_URL + "cliente/favoritos/guardar";
+
+        VolleyPeticion request = new VolleyPeticion(contexto,
+                Request.Method.POST,
+                url,
+                mapa,
+                HashMap.class,
+                String.class,
+                response_Listener,
+                errorListener);
+
+        request.setResponseClass(MensajeBackJson.class);
+
+        return request;
+    }
 
 
     /*

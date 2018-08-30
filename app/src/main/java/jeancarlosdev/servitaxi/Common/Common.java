@@ -20,7 +20,7 @@ public class Common {
     public static String password = "pwd";
     public static String nombre =  "name";
     public static String imagen =  "img";
-
+    public static String external_id =  "external_id";
 
 
 
