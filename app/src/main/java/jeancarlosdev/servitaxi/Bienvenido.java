@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -31,7 +32,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.Volley;
 import com.facebook.login.LoginManager;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -51,7 +54,15 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -59,13 +70,16 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
+import com.rengwuxian.materialedittext.MaterialEditText;
 import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
 
+import dmax.dialog.SpotsDialog;
 import io.paperdb.Paper;
 import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
+import jeancarlosdev.servitaxi.Modelos.ClienteBackJson;
 import jeancarlosdev.servitaxi.Modelos.FCMResponse;
 import jeancarlosdev.servitaxi.Modelos.Favorito;
 import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
@@ -75,6 +89,8 @@ import jeancarlosdev.servitaxi.Modelos.Token;
 import jeancarlosdev.servitaxi.Remote.Conexion;
 import jeancarlosdev.servitaxi.Remote.IFCMService;
 import jeancarlosdev.servitaxi.Remote.VolleyPeticion;
+import jeancarlosdev.servitaxi.Remote.VolleyProcesadorResultado;
+import jeancarlosdev.servitaxi.Remote.VolleyTiposError;
 import jeancarlosdev.servitaxi.Utilidades.CustomInfoWindow;
 import jeancarlosdev.servitaxi.Utilidades.TransformarImagen;
 import retrofit2.Call;
@@ -142,13 +158,17 @@ public class Bienvenido extends AppCompatActivity
 
     String url, nombre, email;
 
-    //endregion
+    HashMap<String, String> mapa;
 
+    private RequestQueue requestQueue;
+
+    //endregion
 
 
     private void cerrarSesion() {
 
         Paper.init(this);
+
         Paper.book().destroy();
 
         LoginManager.getInstance().logOut();
@@ -183,29 +203,29 @@ public class Bienvenido extends AppCompatActivity
 
         View hView = navigationView.getHeaderView(0);
 
-        ImageView imagen= hView.findViewById(R.id.imageView);
+        ImageView imagen = hView.findViewById(R.id.imageView);
 
-        TextView textoNombre=  hView.findViewById(R.id.Nombre);
+        TextView textoNombre = hView.findViewById(R.id.Nombre);
 
-        TextView textoCorreo=  hView.findViewById(R.id.correo);
+        requestQueue = Volley.newRequestQueue(getApplicationContext());
 
-//        Log.e("Nombre",getIntent().getExtras().getString("nombre") );
+        TextView textoCorreo = hView.findViewById(R.id.correo);
 
-        if(getIntent().getExtras().getString("url")!= null){
+        if (getIntent().getExtras().getString("url") != null) {
 
             url = getIntent().getExtras().getString("url");
 
             Picasso.with(this).load(url).transform(new TransformarImagen()).into(imagen);
         }
 
-        if(getIntent().getExtras().getString("nombre")!= null){
+        if (getIntent().getExtras().getString("nombre") != null) {
 
             nombre = getIntent().getExtras().getString("nombre");
 
             textoNombre.setText(nombre);
         }
 
-        if(getIntent().getExtras().getString("email")!= null){
+        if (getIntent().getExtras().getString("email") != null) {
 
             email = getIntent().getExtras().getString("email");
 
@@ -236,7 +256,6 @@ public class Bienvenido extends AppCompatActivity
 
             }
         });
-
 
 
         btnPickUpRequest = findViewById(R.id.btnPickUpRequest);
@@ -355,7 +374,7 @@ public class Bienvenido extends AppCompatActivity
 
                         dialogInterface.dismiss();
                     }
-        });
+                });
 
         dialog.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
             @Override
@@ -383,9 +402,9 @@ public class Bienvenido extends AppCompatActivity
                     @Override
                     public void onResponse(MensajeBackJson response) {
                         if (response != null && ("FD".equalsIgnoreCase(response.Siglas)
-                                || "DNF".equalsIgnoreCase(response.Siglas))){
+                                || "DNF".equalsIgnoreCase(response.Siglas))) {
                             Toast.makeText(Bienvenido.this, response.Mensaje, Toast.LENGTH_SHORT).show();
-                        }else{
+                        } else {
                             Toast.makeText(Bienvenido.this, "Se ha guardado correctamente", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -746,13 +765,9 @@ public class Bienvenido extends AppCompatActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if(id== R.id.cerrarSesion){
+        if (id == R.id.cerrarSesion) {
 
-            Log.e("Si cerro", "SI CERRAR SESION");
-
-            //cerrarSesion();
-
-            return  true;
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -771,12 +786,223 @@ public class Bienvenido extends AppCompatActivity
 
         } else if (id == R.id.cerrarSesion) {
 
-                cerrarSesion();
+            cerrarSesion();
+        } else if (id == R.id.cambiarContrasena) {
+
+            cambiarContrasena();
+
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void cambiarContrasena() {
+
+        final String external = Paper.book().read(Common.external_id);
+
+        final AlertDialog.Builder dialogInicio = new AlertDialog.Builder(this);
+
+        dialogInicio.setTitle("Contraseña");
+
+        dialogInicio.setMessage("Cambiar contraseña");
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        View changePass_layout = inflater.
+                inflate(R.layout.changepass, null);
+
+        final MaterialEditText etxtEmail = changePass_layout.
+                findViewById(R.id.etxtemailConf);
+
+        final MaterialEditText etxtActuallyPass = changePass_layout.
+                findViewById(R.id.etxtActuallyPass);
+
+        final MaterialEditText etxtPass = changePass_layout.
+                findViewById(R.id.etxtPass);
+
+        final MaterialEditText etxtConfirmPass = changePass_layout.
+                findViewById(R.id.etxtConfirmPass);
+
+        dialogInicio.setView(changePass_layout);
+
+        dialogInicio.setPositiveButton("Cambiar",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        dialogInterface.dismiss();
+
+                        if (TextUtils.isEmpty(etxtEmail.getText().toString())) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.ingreseEmail,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (TextUtils.isEmpty(etxtActuallyPass.getText().toString())) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.ingreseActuallyPass,
+                                    Toast.LENGTH_SHORT).show();
+
+                            return;
+                        }
+
+                        if (etxtPass.getText().toString().length() < 6) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.contrasenaDemasiadoCorta,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+
+                        if (TextUtils.isEmpty(etxtPass.getText().toString())) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.ingresePass,
+                                    Toast.LENGTH_SHORT).show();
+
+                            return;
+                        }
+
+                        if (etxtPass.getText().toString().length() < 6) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.contrasenaDemasiadoCorta,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+
+                        if (TextUtils.isEmpty(etxtConfirmPass.getText().toString())) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.ingreseConfirmPass,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (etxtConfirmPass.getText().toString().length() < 6) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.contrasenaDemasiadoCorta,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (!etxtPass.getText().toString().equals(etxtConfirmPass.getText().toString())) {
+
+                            Toast.makeText(Bienvenido.this,
+                                    R.string.noCoinciden,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+                        final AuthCredential credential = EmailAuthProvider
+                                .getCredential(etxtEmail.getText().toString(), etxtActuallyPass.getText().toString());
+
+                        final android.app.AlertDialog dialogoEspera = new SpotsDialog(Bienvenido.this);
+
+                        dialogoEspera.show();
+
+                        mapa = new HashMap<>();
+
+                        mapa.put("clave", etxtConfirmPass.getText().toString());
+
+                        //region RegistrarCleinte
+                        VolleyPeticion<MensajeBackJson> registrar = Conexion.cambiarContrasena(
+                                getApplicationContext(),
+                                mapa,
+                                external,
+                                new com.android.volley.Response.Listener<MensajeBackJson>() {
+                                    @Override
+                                    public void onResponse(MensajeBackJson response) {
+
+                                        if (response != null && ("BDF".equalsIgnoreCase(response.Siglas)
+                                                || "NI".equalsIgnoreCase(response.Siglas))) {
+
+                                            Toast.makeText(getApplicationContext(), response.Mensaje, Toast.LENGTH_SHORT).show();
+
+                                            dialogoEspera.dismiss();
+
+                                            return;
+
+                                        } else {
+
+                                            user.reauthenticate(credential)
+                                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                        @Override
+                                                        public void onComplete(@NonNull Task<Void> task) {
+                                                            if (task.isSuccessful()) {
+                                                                user.updatePassword(etxtConfirmPass.getText().toString()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                                    @Override
+                                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                                        if (task.isSuccessful()) {
+                                                                            FirebaseDatabase db = FirebaseDatabase.getInstance();
+
+                                                                            DatabaseReference clientes = db.getReference(Common.clientes_tb1);
+
+                                                                            clientes.child(FirebaseAuth.getInstance()
+                                                                                    .getCurrentUser().getUid()).child("password").setValue(etxtConfirmPass.getText().toString());
+
+                                                                            Toast.makeText(getApplicationContext(),
+                                                                                    R.string.correctPass,
+                                                                                    Toast.LENGTH_SHORT).show();
+
+                                                                            dialogoEspera.dismiss();
+
+                                                                        } else {
+
+                                                                            Toast.makeText(Bienvenido.this,
+                                                                                    R.string.noChange,
+                                                                                    Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    }
+                                                                });
+                                                            } else {
+                                                                Log.e("Error", "Error auth failed");
+                                                            }
+                                                        }
+                                                    });
+
+
+
+
+                                        }
+                                    }
+                                },
+                                new com.android.volley.Response.ErrorListener() {
+                                    @Override
+                                    public void onErrorResponse(VolleyError error) {
+
+                                        VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
+
+                                        Log.e("Error", error.toString());
+
+                                        return;
+                                    }
+                                }
+                        );
+
+                        requestQueue.add(registrar);
+                        //endregion;
+                    }
+                });
+
+        dialogInicio.setNegativeButton("CANCELAR", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+
+        dialogInicio.show();
     }
 
     private void mostrarVentanaQuien() {
@@ -823,28 +1049,28 @@ public class Bienvenido extends AppCompatActivity
                     @Override
                     public void onResponse(Favorito[] response) {
                         if (response != null) {
-                            for (Favorito fav: response){
+                            for (Favorito fav : response) {
                                 Log.e("DIRECCION: ", fav.direccion.toString());
                             }
-    /**
-                            //Crea contenedor
-                            LinearLayout contenedor = new LinearLayout(getApplicationContext());
-                            contenedor.setLayoutParams(new LinearLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
-                            contenedor.setOrientation(LinearLayout.VERTICAL);
-                            contenedor.setGravity(Gravity.CENTER);
-                            //Crea ImageView y TextView
-                            ImageView miImageView = new ImageView(getApplicationContext());
-                            TextView miTextView = new TextView(getApplicationContext());
-                            //Agrega propiedades al TextView.
-                            miTextView.setText("mi TextView");
-                            miTextView.setBackgroundColor(Color.BLUE);
-                            //Agrega imagen al ImageView.
-                            miImageView.setImageResource(R.mipmap.ic_launcher);
+                            /**
+                             //Crea contenedor
+                             LinearLayout contenedor = new LinearLayout(getApplicationContext());
+                             contenedor.setLayoutParams(new LinearLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+                             contenedor.setOrientation(LinearLayout.VERTICAL);
+                             contenedor.setGravity(Gravity.CENTER);
+                             //Crea ImageView y TextView
+                             ImageView miImageView = new ImageView(getApplicationContext());
+                             TextView miTextView = new TextView(getApplicationContext());
+                             //Agrega propiedades al TextView.
+                             miTextView.setText("mi TextView");
+                             miTextView.setBackgroundColor(Color.BLUE);
+                             //Agrega imagen al ImageView.
+                             miImageView.setImageResource(R.mipmap.ic_launcher);
 
-                            //Agrega vistas al contenedor.
-                            contenedor.addView(miTextView);
-                            contenedor.addView(miImageView);
-     */
+                             //Agrega vistas al contenedor.
+                             contenedor.addView(miTextView);
+                             contenedor.addView(miImageView);
+                             */
                         } else {
                             Toast.makeText(Bienvenido.this, "No posee ningún lugar favorito", Toast.LENGTH_SHORT).show();
                         }
@@ -931,7 +1157,6 @@ public class Bienvenido extends AppCompatActivity
         displayLocation();
         startLocationUpdates();
     }
-
 
     private void startLocationUpdates() {
 

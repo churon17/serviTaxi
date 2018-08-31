@@ -12,4 +12,17 @@
     <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
+    <string name="ingresePass">Ingrese contraseña</string>
+    <string name="ingreseConfirmPass">Debe confirmar su contraseña</string>
+    <string name="contrasenaDemasiadoCorta">La contraseña debe tener mas de 6 caracteres</string>
+    <string name="noCoinciden">Las contraseñas no coinciden, revise por favor.</string>
+    <string name="correctPass">Se ha modificado correctamente la contraseña</string>
+    <string name="ingreseCon">Ingrese su actual Contraseña</string>
+    <string name="ingreseCorreo">Ingrese su correo electrónico</string>
+    <string name="newPass">Contraseña nueva</string>
+    <string name="confirmPass">Confirme contraseña</string>
+    <string name="ingreseEmail">Por favor, ingrese su email</string>
+    <string name="ingreseActuallyPass">Por favor, ingrese su contraseña actual</string>
+    <string name="noChange">No se ha podido cambiar la contraseñaç</string>
+    <string name="mensajePass">Se ingreso con Facebook, y se ha creado una contraseña automaticamente, Por seguridad cambie su contraseña. Contraseña por defecto: 123456789</string>
 </resources>

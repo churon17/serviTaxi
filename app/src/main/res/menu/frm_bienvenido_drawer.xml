@@ -18,10 +18,18 @@
     <item android:title="Cuenta">
         <menu>
             <item
+                android:id="@+id/cambiarContrasena"
+                android:icon="@drawable/ic_create"
+                android:title="Cambiar contraseña" />
+
+            <item
                 android:id="@+id/cerrarSesion"
                 android:icon="@drawable/ic_power_settings_new"
                 android:title="Cerrar Sesion" />
+
         </menu>
     </item>
+
+
 
 </menu>

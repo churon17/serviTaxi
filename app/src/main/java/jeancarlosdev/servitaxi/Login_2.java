@@ -28,7 +28,6 @@ import com.facebook.FacebookException;
 
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.facebook.internal.LockOnGetVariable;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -42,16 +41,16 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
-import org.apache.commons.lang3.StringUtils;
+
 import org.json.JSONObject;
 
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 
 import dmax.dialog.SpotsDialog;
 import io.paperdb.Paper;
 import jeancarlosdev.servitaxi.Common.Common;
+import jeancarlosdev.servitaxi.Modelos.AllCliente;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
 import jeancarlosdev.servitaxi.Modelos.ClienteBackJson;
 import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
@@ -65,7 +64,6 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class Login_2 extends AppCompatActivity {
 
-
     //region Atributos
     private Button btnSignIn, btnRegister;
     private RelativeLayout layoutPrincipal;
@@ -75,13 +73,8 @@ public class Login_2 extends AppCompatActivity {
     private CallbackManager callbackManager;
     private LoginButton loginButton;
     private String name;
-    Utilidades util = new Utilidades(this);
 
     private RequestQueue requestQueue;
-
-    boolean guardo = false;
-
-    boolean inicioSesion = false;
 
     HashMap<String, String> mapa;
 
@@ -90,15 +83,12 @@ public class Login_2 extends AppCompatActivity {
     String user;
 
     String imagen;
-
-
     //endregion
 
     @Override
     protected void attachBaseContext(Context newBase) {
 
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
-
     }
 
     @Override
@@ -136,8 +126,8 @@ public class Login_2 extends AppCompatActivity {
 
         user = Paper.book().read(Common.cliente);
         String pass = Paper.book().read(Common.password);
-         nombre = Paper.book().read(Common.nombre);
-         imagen = Paper.book().read(Common.imagen);
+        nombre = Paper.book().read(Common.nombre);
+        imagen = Paper.book().read(Common.imagen);
 
         if (user != null && pass != null) {
             if (!TextUtils.isEmpty(user) && !TextUtils.isEmpty(pass)) {
@@ -153,7 +143,6 @@ public class Login_2 extends AppCompatActivity {
         final android.app.AlertDialog dialogoEspera = new SpotsDialog(Login_2.this);
 
         dialogoEspera.show();
-
         //IniciarSesion.
 
         auth.signInWithEmailAndPassword(user, pass)
@@ -175,12 +164,11 @@ public class Login_2 extends AppCompatActivity {
 
                                         imagen = Paper.book().read(Common.imagen);
 
+                                        intencion.putExtra("nombre", nombre);
 
-                                        intencion.putExtra("nombre",nombre );
+                                        intencion.putExtra("email", user);
 
-                                        intencion.putExtra("email",user);
-
-                                        intencion.putExtra("url" , imagen);
+                                        intencion.putExtra("url", imagen);
 
                                         startActivity(intencion);
 
@@ -232,7 +220,7 @@ public class Login_2 extends AppCompatActivity {
 
                                 try {
 
-                                    final String ruta = ("https://graph.facebook.com/"+object.getString("id")+"/picture?width=150&height=150");
+                                    final String ruta = ("https://graph.facebook.com/" + object.getString("id") + "/picture?width=150&height=150");
 
                                     final String nombre = object.getString("name");
 
@@ -242,16 +230,19 @@ public class Login_2 extends AppCompatActivity {
 
                                     mapa.put("correo", email);
 
-                                    mapa.put("clave", "123456789");
+                                    VolleyPeticion<AllCliente> devolver = Conexion.retornarCliente(
 
-                                    VolleyPeticion<ClienteBackJson> inicio = Conexion.iniciarSesion(
                                             getApplicationContext(),
-                                            mapa,
-                                            new Response.Listener<ClienteBackJson>() {
-                                                @Override
-                                                public void onResponse(final ClienteBackJson response) {
 
-                                                    if (response != null && (response.siglas.equalsIgnoreCase("ND"))) {
+                                            mapa,
+
+                                            new Response.Listener<AllCliente>() {
+                                                @Override
+                                                public void onResponse(final AllCliente responseAll) {
+
+                                                    Log.e("Siglas", responseAll.siglas);
+
+                                                    if (responseAll != null && (responseAll.siglas.equalsIgnoreCase("ND"))) {
 
                                                         mapa = new HashMap<>();
 
@@ -285,7 +276,11 @@ public class Login_2 extends AppCompatActivity {
                                                                 mapa,
                                                                 new Response.Listener<MensajeBackJson>() {
                                                                     @Override
-                                                                    public void onResponse(MensajeBackJson response) {
+                                                                    public void onResponse(final MensajeBackJson response) {
+
+                                                                        Log.e("Mensaje", response.Mensaje);
+
+                                                                        Log.e("Siglas", response.Siglas);
 
                                                                         if (response != null && ("FD".equalsIgnoreCase(response.Siglas)
                                                                                 || "DNF".equalsIgnoreCase(response.Siglas))) {
@@ -296,73 +291,105 @@ public class Login_2 extends AppCompatActivity {
 
                                                                         } else {
 
-                                                                            auth.createUserWithEmailAndPassword(
-                                                                                    mapa.get("correo"),
-                                                                                    mapa.get("clave")
-                                                                            )
-                                                                                    .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                                            mapa = new HashMap<>();
+
+                                                                            mapa.put("correo", email);
+
+                                                                            VolleyPeticion<AllCliente> devolverClienteFinal = Conexion.retornarCliente(
+                                                                                    getApplicationContext(),
+
+                                                                                    mapa,
+                                                                                    new Response.Listener<AllCliente>() {
+
                                                                                         @Override
-                                                                                        public void onSuccess(AuthResult authResult) {
+                                                                                        public void onResponse(final AllCliente responseAllFinal) {
 
-                                                                                            Cliente cliente = new Cliente();
+                                                                                            Log.e("responseAllFinal", responseAllFinal.siglas);
 
-                                                                                            cliente.setEmail(mapa.get("correo"));
-                                                                                            cliente.setPassword(mapa.get("clave"));
-                                                                                            cliente.setNombre(mapa.get("nombre"));
-                                                                                            cliente.setApellidos(mapa.get("apellido"));
+                                                                                            if (responseAllFinal != null && (responseAllFinal.siglas.equalsIgnoreCase("OE"))) {
 
-                                                                                            //Usamos al email como llave primaria.
-                                                                                            clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                                                                                                    .setValue(cliente)
-                                                                                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                                                                        @Override
-                                                                                                        public void onSuccess(Void aVoid) {
+                                                                                                auth.createUserWithEmailAndPassword(
+                                                                                                        email,
+                                                                                                        responseAllFinal.clave
+                                                                                                )
+                                                                                                        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                                                                            @Override
+                                                                                                            public void onSuccess(AuthResult authResult) {
 
-                                                                                                            Paper.book().write(Common.cliente, mapa.get("correo"));
-                                                                                                            Paper.book().write(Common.password, mapa.get("clave"));
-                                                                                                            Paper.book().write(Common.nombre, mapa.get("nombre"));
-                                                                                                            Paper.book().write(Common.imagen, ruta);
+                                                                                                                Cliente cliente = new Cliente();
 
-                                                                                                            Intent intencion = new Intent(getApplicationContext(),
-                                                                                                                    Bienvenido.class);
+                                                                                                                cliente.setEmail(email);
+                                                                                                                cliente.setPassword(responseAllFinal.clave);
+                                                                                                                cliente.setNombre(responseAllFinal.nombre);
+                                                                                                                cliente.setApellidos(responseAllFinal.apellido);
 
-                                                                                                            intencion.putExtra("nombre",nombre );
+                                                                                                                //Usamos al email como llave primaria.
+                                                                                                                clientes.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                                                                                                        .setValue(cliente)
+                                                                                                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                                                                                            @Override
+                                                                                                                            public void onSuccess(Void aVoid) {
 
-                                                                                                            intencion.putExtra("email",email );
+                                                                                                                                Paper.book().write(Common.cliente, email);
+                                                                                                                                Paper.book().write(Common.password, responseAllFinal.clave);
+                                                                                                                                Paper.book().write(Common.nombre, responseAll.nombre);
+                                                                                                                                Paper.book().write(Common.external_id, responseAllFinal.external);
+                                                                                                                                Paper.book().write(Common.imagen, ruta);
 
-                                                                                                            intencion.putExtra("url",ruta);
+                                                                                                                                Toast.makeText(Login_2.this,
 
-                                                                                                            startActivity(intencion);
-                                                                                                        }
-                                                                                                    })
-                                                                                                    .addOnFailureListener(new OnFailureListener() {
-                                                                                                        @Override
-                                                                                                        public void onFailure(@NonNull Exception e) {
+                                                                                                                                        R.string.mensajePass,
 
-                                                                                                            Snackbar.make(layoutPrincipal,
-                                                                                                                    "Cliente no registrado " + e.getMessage(),
-                                                                                                                    Snackbar.LENGTH_SHORT).show();
+                                                                                                                                        Toast.LENGTH_LONG).show();
 
-                                                                                                            return;
-                                                                                                        }
-                                                                                                    });
+                                                                                                                                Intent intencion = new Intent(getApplicationContext(),
+                                                                                                                                        Bienvenido.class);
+
+                                                                                                                                intencion.putExtra("nombre", nombre);
+
+                                                                                                                                intencion.putExtra("email", email);
+
+                                                                                                                                intencion.putExtra("url", ruta);
+
+                                                                                                                                startActivity(intencion);
+                                                                                                                            }
+                                                                                                                        })
+                                                                                                                        .addOnFailureListener(new OnFailureListener() {
+                                                                                                                            @Override
+                                                                                                                            public void onFailure(@NonNull Exception e) {
+
+                                                                                                                                Snackbar.make(layoutPrincipal,
+                                                                                                                                        "Cliente no registrado " + e.getMessage(),
+                                                                                                                                        Snackbar.LENGTH_SHORT).show();
+
+                                                                                                                                return;
+                                                                                                                            }
+                                                                                                                        });
+                                                                                                            }
+                                                                                                        }).addOnFailureListener(new OnFailureListener() {
+                                                                                                    @Override
+                                                                                                    public void onFailure(@NonNull Exception e) {
+                                                                                                        Snackbar.make(layoutPrincipal,
+                                                                                                                "Cliente no registrado" + e.getMessage(),
+                                                                                                                Snackbar.LENGTH_SHORT).show();
+
+                                                                                                        return;
+                                                                                                    }
+                                                                                                });
+                                                                                            }
                                                                                         }
-                                                                                    }).addOnFailureListener(new OnFailureListener() {
-                                                                                @Override
-                                                                                public void onFailure(@NonNull Exception e) {
-                                                                                    Snackbar.make(layoutPrincipal,
-                                                                                            "Cliente no registrado" + e.getMessage(),
-                                                                                            Snackbar.LENGTH_SHORT).show();
+                                                                                    },
+                                                                                    new Response.ErrorListener() {
+                                                                                        @Override
+                                                                                        public void onErrorResponse(VolleyError error) {
 
-                                                                                    return;
-                                                                                }
+                                                                                        }
+                                                                                    });
 
-                                                                            });
-
+                                                                            requestQueue.add(devolverClienteFinal);
                                                                             Toast.makeText(getApplicationContext(),
                                                                                     "Se ha guardado correctamente",
                                                                                     Toast.LENGTH_SHORT).show();
-
                                                                         }
                                                                     }
                                                                 },
@@ -377,55 +404,94 @@ public class Login_2 extends AppCompatActivity {
 
                                                                         return;
                                                                     }
-
                                                                 }
                                                         );
 
                                                         requestQueue.add(registrar);
                                                         //endregion;
 
-
                                                     } else {
 
-                                                        auth.signInWithEmailAndPassword(email,
-                                                                "123456789")
-                                                                .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                        Log.e("Llego", responseAll.clave);
+
+                                                        mapa = new HashMap<>();
+
+                                                        mapa.put("correo", email);
+
+                                                        mapa.put("clave", responseAll.clave);
+
+                                                        VolleyPeticion<ClienteBackJson> inicio = Conexion.iniciarSesion(
+
+                                                                getApplicationContext(),
+
+                                                                mapa,
+
+                                                                new Response.Listener<ClienteBackJson>() {
                                                                     @Override
-                                                                    public void onSuccess(AuthResult authResult) {
+                                                                    public void onResponse(final ClienteBackJson response) {
 
-                                                                        Paper.book().write(Common.cliente, email);
+                                                                        if (response != null && (response.siglas.equalsIgnoreCase("OE"))) {
 
-                                                                        Paper.book().write(Common.password, "123456789");
+                                                                            auth.signInWithEmailAndPassword(email,
+                                                                                    responseAll.clave)
+                                                                                    .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                                                                        @Override
+                                                                                        public void onSuccess(AuthResult authResult) {
 
-                                                                        Paper.book().write(Common.nombre, response.nombre);
+                                                                                            Log.e("Autentifico", "Si con Firebase");
 
-                                                                        Paper.book().write(Common.imagen, ruta);
+                                                                                            Paper.book().write(Common.cliente, email);
 
-                                                                        Intent intencion = new Intent(getApplicationContext(),
-                                                                                Bienvenido.class);
+                                                                                            Paper.book().write(Common.password, responseAll.clave);
 
-                                                                        intencion.putExtra("nombre",nombre );
+                                                                                            Paper.book().write(Common.nombre, response.nombre);
 
-                                                                        intencion.putExtra("email",email );
+                                                                                            Paper.book().write(Common.imagen, ruta);
 
-                                                                        intencion.putExtra("url",ruta);
+                                                                                            Paper.book().write(Common.external_id, response.external);
 
-                                                                        startActivity(intencion);
+                                                                                            Intent intencion = new Intent(getApplicationContext(),
+                                                                                                    Bienvenido.class);
 
-                                                                        finish();
+                                                                                            intencion.putExtra("nombre", nombre);
+
+                                                                                            intencion.putExtra("email", email);
+
+                                                                                            intencion.putExtra("url", ruta);
+
+                                                                                            startActivity(intencion);
+
+                                                                                            finish();
+                                                                                        }
+                                                                                    }).addOnFailureListener(new OnFailureListener() {
+                                                                                @Override
+                                                                                public void onFailure(@NonNull Exception e) {
+
+                                                                                    Snackbar.make(layoutPrincipal,
+                                                                                            "Error" + e.getMessage(),
+                                                                                            Snackbar.LENGTH_SHORT).show();
+
+                                                                                }
+                                                                            });
+
+
+                                                                        }
                                                                     }
-                                                                }).addOnFailureListener(new OnFailureListener() {
-                                                            @Override
-                                                            public void onFailure(@NonNull Exception e) {
+                                                                },
+                                                                new Response.ErrorListener() {
+                                                                    @Override
+                                                                    public void onErrorResponse(VolleyError error) {
 
-                                                                Snackbar.make(layoutPrincipal,
-                                                                        "Error" + e.getMessage(),
-                                                                        Snackbar.LENGTH_SHORT).show();
+                                                                        VolleyTiposError errors = VolleyProcesadorResultado.parseErrorResponse(error);
 
-                                                            }
-                                                        });
+                                                                        Log.e("Error", error.toString());
 
+                                                                        return;
+                                                                    }
+                                                                }
+                                                        );
 
+                                                        requestQueue.add(inicio);
                                                     }
                                                 }
                                             },
@@ -442,8 +508,7 @@ public class Login_2 extends AppCompatActivity {
                                             }
                                     );
 
-                                    requestQueue.add(inicio);
-
+                                    requestQueue.add(devolver);
 
                                 } catch (Exception e) {
 
@@ -596,16 +661,19 @@ public class Login_2 extends AppCompatActivity {
                                                         @Override
                                                         public void onSuccess(AuthResult authResult) {
 
+
                                                             Paper.book().write(Common.cliente, etxtEmailInicio.getText().toString());
                                                             Paper.book().write(Common.password, etxtContrasenaInicio.getText().toString());
                                                             Paper.book().write(Common.nombre, response.nombre);
+                                                            Paper.book().write(Common.external_id, response.external);
+
 
                                                             dialogoEspera.dismiss();
 
                                                             Intent intencion = new Intent(getApplicationContext(),
                                                                     Bienvenido.class);
 
-                                                            intencion.putExtra("nombre", response.nombre + " " +response.apellido
+                                                            intencion.putExtra("nombre", response.nombre + " " + response.apellido
                                                             );
 
                                                             intencion.putExtra("email", etxtEmailInicio.getText().toString());
@@ -697,7 +765,6 @@ public class Login_2 extends AppCompatActivity {
                             "Por favor ingrese una direccion de correo " +
                                     "electronico",
                             Snackbar.LENGTH_SHORT).show();
-
                     return;
                 }
 
@@ -706,10 +773,8 @@ public class Login_2 extends AppCompatActivity {
                     Snackbar.make(layoutPrincipal,
                             "Por favor ingrese contrasena"
                             , Snackbar.LENGTH_SHORT).show();
-
                     return;
                 }
-
 
                 if (etxtContrasena.getText().toString().length() < 4) {
 

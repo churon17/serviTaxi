@@ -9,6 +9,7 @@ import com.android.volley.Response;
 
 import java.util.HashMap;
 
+import jeancarlosdev.servitaxi.Modelos.AllCliente;
 import jeancarlosdev.servitaxi.Modelos.ClienteBackJson;
 import jeancarlosdev.servitaxi.Modelos.Favorito;
 import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
@@ -100,29 +101,48 @@ public class Conexion {
     }
 
 
-    /*
-    public static VolleyPeticion<Noticia[]> listaNoticiasAdmin(
-            @NonNull final Context context,
-            @NonNull final String token,
-            @NonNull final String id,
-            @NonNull Response.Listener<Noticia[]> responseListener,
-            @NonNull Response.ErrorListener errorListener
-    ){
-        final String url = API_URL + "administracion/noticias/list/" +id;
-        VolleyPeticion request = new VolleyPeticion(
-                context,
-                Request.Method.GET,
+    public static VolleyPeticion<MensajeBackJson> cambiarContrasena(@NonNull final Context contexto,
+                                                                    @NonNull final HashMap mapa,
+                                                                    @NonNull final String external,
+                                                                    @NonNull Response.Listener<MensajeBackJson> response_Listener,
+                                                                    @NonNull Response.ErrorListener errorListener){
+
+        final String url = API_URL + "cliente/editar/" +external;
+
+        VolleyPeticion request = new VolleyPeticion(contexto,
+                Request.Method.POST,
                 url,
-                responseListener,
-                errorListener
-        );
-        request.setResponseClass(Noticia[].class);
-        try{
-            request.getHeaders().put("Api-Token", token);
-        }catch (Exception e){
-            Log.e("Error de listar", e.getMessage());
-        }
+                mapa,
+                HashMap.class,
+                String.class,
+                response_Listener,
+                errorListener);
+
+        request.setResponseClass(MensajeBackJson.class);
+
         return request;
     }
-*/
+
+    public static VolleyPeticion<AllCliente> retornarCliente(@NonNull final Context contexto,
+                                                               @NonNull final HashMap mapa,
+                                                               @NonNull Response.Listener<AllCliente> response_Listener,
+                                                               @NonNull Response.ErrorListener errorListener){
+
+        final String url = API_URL + "cliente/devolverCliente";
+
+        VolleyPeticion request = new VolleyPeticion(contexto,
+                Request.Method.POST,
+                url,
+                mapa,
+                HashMap.class,
+                String.class,
+                response_Listener,
+                errorListener);
+
+        request.setResponseClass(AllCliente.class);
+
+        return request;
+    }
+
+
 }
