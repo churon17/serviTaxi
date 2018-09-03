@@ -61,13 +61,15 @@ public class Conexion {
         return request;
     }
 
+
+
     public static VolleyPeticion<Favorito[]> listarFavoritos(
             @NonNull final Context context,
             @NonNull final String id,
             @NonNull Response.Listener<Favorito[]> responseListener,
             @NonNull Response.ErrorListener errorListener
     ){
-        final String url = API_URL + "cliente/favoritos/listarFavoritos" + id;
+        final String url = API_URL + "cliente/favoritos/listarFavoritos/" + id;
         VolleyPeticion request = new VolleyPeticion(
                 context,
                 Request.Method.GET,

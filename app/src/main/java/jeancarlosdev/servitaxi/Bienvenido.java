@@ -10,7 +10,6 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -27,8 +26,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,11 +56,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -79,7 +77,6 @@ import dmax.dialog.SpotsDialog;
 import io.paperdb.Paper;
 import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Cliente;
-import jeancarlosdev.servitaxi.Modelos.ClienteBackJson;
 import jeancarlosdev.servitaxi.Modelos.FCMResponse;
 import jeancarlosdev.servitaxi.Modelos.Favorito;
 import jeancarlosdev.servitaxi.Modelos.MensajeBackJson;
@@ -131,6 +128,8 @@ public class Bienvenido extends AppCompatActivity
     GeoFire geoFire;
 
     private Marker mUserMarker;
+
+    private Favorito[] favoritosLista;
 
     ImageView imgExpandable;
 
@@ -273,6 +272,8 @@ public class Bienvenido extends AppCompatActivity
             }
         });
 
+        listaFavoritos();
+
         setUpLocation();
 
         updateFirebaseToken();
@@ -352,6 +353,69 @@ public class Bienvenido extends AppCompatActivity
                 });
     }
 
+    private void sendRequestToDriverFavorito(final String driver_id, final Double latitud, final Double longitud) {
+
+        DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token_tb1);
+
+        tokens.orderByKey().equalTo(driver_id)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+
+                        for (DataSnapshot postSnapShot : dataSnapshot.getChildren()) {
+
+                            Token token = postSnapShot
+                                    .getValue(Token.class); //Obtener Token de database con key
+
+                            String json_lat_lng = new Gson()
+                                    .toJson(new LatLng(latitud,
+                                            longitud));
+
+                            String riderToken = FirebaseInstanceId
+                                    .getInstance()
+                                    .getToken();
+
+                            Notification data = new Notification(
+                                    riderToken,
+                                    json_lat_lng); //Enviar a conductor app
+
+                            Sender content = new Sender(token.getToken(),
+                                    data); //Enviar la data al token
+
+                            mService.sendMessage(content)
+                                    .enqueue(new Callback<FCMResponse>() {
+                                        @Override
+                                        public void onResponse(Call<FCMResponse> call,
+                                                               Response<FCMResponse> response) {
+
+                                            if (response.body().success == 1) {
+
+                                                Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
+                                                conductorEncontrado = false;
+                                                driver_idGlob = "";
+                                                btnPickUpRequest.setText("Solicitar Taxi");
+                                            } else {
+
+                                                Toast.makeText(Bienvenido.this, "La Peticion Fallo", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<FCMResponse> call, Throwable t) {
+                                            Log.e("ERROR", t.getMessage());
+                                        }
+                                    });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+    }
+
     private void mostrarAgregarFavs() {
 
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
@@ -372,7 +436,7 @@ public class Bienvenido extends AppCompatActivity
 
                         agregarFav();
 
-                        dialogInterface.dismiss();
+                        //dialogInterface.dismiss();
                     }
                 });
 
@@ -390,12 +454,12 @@ public class Bienvenido extends AppCompatActivity
     private void agregarFav() {
 
         HashMap<String, String> mapa = new HashMap<>();
-        mapa.put("external", Common.external_id);
+        mapa.put("external",  String.valueOf(Paper.book().read(Common.external_id)));
         mapa.put("direccion", "Prueba");
         mapa.put("latitud", String.valueOf(mUltimaUbicacion.getLatitude()));
         mapa.put("longitud", String.valueOf(mUltimaUbicacion.getLongitude()));
 
-        Conexion.registrarFavorito(
+        VolleyPeticion<MensajeBackJson> agregarFav = Conexion.registrarFavorito(
                 getApplicationContext(),
                 mapa,
                 new com.android.volley.Response.Listener<MensajeBackJson>() {
@@ -405,7 +469,7 @@ public class Bienvenido extends AppCompatActivity
                                 || "DNF".equalsIgnoreCase(response.Siglas))) {
                             Toast.makeText(Bienvenido.this, response.Mensaje, Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(Bienvenido.this, "Se ha guardado correctamente", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(Bienvenido.this, response.Mensaje, Toast.LENGTH_SHORT).show();
                         }
                     }
                 },
@@ -418,6 +482,8 @@ public class Bienvenido extends AppCompatActivity
                     }
                 }
         );
+
+        requestQueue.add(agregarFav);
     }
 
     private void requestPickUpHere(String uid) {
@@ -449,12 +515,87 @@ public class Bienvenido extends AppCompatActivity
         findDrivers();
     }
 
+    private void requestPickUpHereFavorito(String uid, Double latitud, Double longitud) {
+
+        DatabaseReference dbRequest = FirebaseDatabase.getInstance().getReference(Common.solicitud_tb1);
+
+        GeoFire mGeoFire = new GeoFire(dbRequest);
+        mGeoFire.setLocation(uid, new GeoLocation(latitud
+                , longitud));
+
+        if (mUserMarker.isVisible()) {
+
+            mUserMarker.remove();
+
+        }
+
+        mUserMarker = mMap.addMarker(new MarkerOptions()
+                .title("PickUp Here")
+                .snippet("")
+                .position(new LatLng(latitud,
+                        longitud))
+                .icon(BitmapDescriptorFactory.
+                        defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+        mUserMarker.showInfoWindow();
+
+        btnPickUpRequest.setText("Encontrando tu Taxi....");
+
+        findDriversFavorito(latitud, longitud);
+    }
+
     private void findDrivers() {
         DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
 
         GeoFire gfDrivers = new GeoFire(drivers);
 
         GeoQuery geoQuery = gfDrivers.queryAtLocation(new GeoLocation(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude()), radio);
+        geoQuery.removeAllListeners();
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                //Si lo encuentra
+
+                if (!conductorEncontrado) {
+                    conductorEncontrado = true;
+                    driver_idGlob = key;
+                    btnPickUpRequest.setText("Llamar Taxi");
+                    Toast.makeText(Bienvenido.this, "Taxi Encontrado!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                //Si no encuentra un conductor, aumentar radio
+                if (!conductorEncontrado) {
+                    radio++;
+                    findDrivers();
+                }
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void findDriversFavorito(Double latitud, Double longitud) {
+        DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
+
+        GeoFire gfDrivers = new GeoFire(drivers);
+
+        GeoQuery geoQuery = gfDrivers.queryAtLocation(new GeoLocation(latitud, longitud), radio);
         geoQuery.removeAllListeners();
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
@@ -1027,83 +1168,140 @@ public class Bienvenido extends AppCompatActivity
 
     private void mostrarVentanaFavs() {
 
-        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        dialog.setTitle("Favoritos");
-        dialog.setMessage("Lugares Favoritos");
+        AlertDialog.Builder builderSingle = new AlertDialog.Builder(Bienvenido.this);
+        builderSingle.setTitle("Favoritos: ");
 
-        LayoutInflater inflater = LayoutInflater.from(this);
+        final ArrayAdapter<String> arrayAdapterNombre = new ArrayAdapter<String>(Bienvenido.this, android.R.layout.select_dialog_singlechoice);
+        final ArrayAdapter<Favorito> arrayAdapter = new ArrayAdapter<Favorito>(Bienvenido.this, android.R.layout.select_dialog_singlechoice);
 
-        View register_Layout = inflater.
-                inflate(R.layout.frm_favoritos, null);
+        for (Favorito fav : favoritosLista) {
+            arrayAdapter.add(fav);
+            arrayAdapterNombre.add(String.valueOf(fav.getDireccion()));
+        }
 
-        /*
-        AQUI CARGA TODOS LOS FAVS
+        builderSingle.setPositiveButton("Agregar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                mostrarAgregarFavs();
+            }
+        });
+
+        builderSingle.setNegativeButton("Atrás", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        builderSingle.setAdapter(arrayAdapterNombre, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(final DialogInterface dialog, int which) {
+                final Favorito fav = arrayAdapter.getItem(which);
+                AlertDialog.Builder builderInner = new AlertDialog.Builder(Bienvenido.this);
+                builderInner.setMessage(fav.getDireccion());
+                builderInner.setTitle("Solicitar Taxi en ");
+                builderInner.setPositiveButton("Solicitar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog,int which) {
+                        if (!conductorEncontrado) {
+                            requestPickUpHereFavorito(FirebaseAuth.getInstance().getCurrentUser().getUid(), Double.valueOf(fav.getLatitud()), Double.valueOf(fav.getLongitud()));
+                        } else {
+                            sendRequestToDriverFavorito(driver_idGlob, Double.valueOf(fav.getLatitud()), Double.valueOf(fav.getLongitud()));
+                        }
+                    }
+                });
+                builderInner.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialog.dismiss();
+                    }
+                });
+                builderInner.show();
+            }
+        });
+        builderSingle.show();
+
+
+
+        /**
+         * AlertDialog.Builder builderSingle = new AlertDialog.Builder(Bienvenido.this);
+         builderSingle.setTitle("Favoritos: ");
+
+         final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(Bienvenido.this, android.R.layout.select_dialog_singlechoice);
+
+         for (Favorito fav : favoritosLista) {
+         arrayAdapter.add(String.valueOf(fav.getDireccion()));
+         }
+
+         builderSingle.setPositiveButton("Agregar", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialogInterface, int i) {
+        mostrarAgregarFavs();
+        }
+        });
+
+         builderSingle.setNegativeButton("Atrás", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+        dialog.dismiss();
+        }
+        });
+
+         builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(final DialogInterface dialog, int which) {
+        String strName = arrayAdapter.getItem(which);
+        AlertDialog.Builder builderInner = new AlertDialog.Builder(Bienvenido.this);
+        builderInner.setMessage(strName);
+        builderInner.setTitle("Solicitar Taxi en ");
+        builderInner.setPositiveButton("Solicitar", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog,int which) {
+        dialog.dismiss();
+        }
+        });
+        builderInner.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialogInterface, int i) {
+        dialog.dismiss();
+        }
+        });
+        builderInner.show();
+        }
+        });
+         builderSingle.show();
          */
+    }
 
-        //HashMap<String, String> mapa = new HashMap<>();
+    public void listaFavoritos(){
+        String external = String.valueOf(Paper.book().read(Common.external_id));
 
-        Conexion.listarFavoritos(
+        VolleyPeticion<Favorito[]> favoritos = Conexion.listarFavoritos(
                 getApplicationContext(),
-                Common.external_id,
+                external,
                 new com.android.volley.Response.Listener<Favorito[]>() {
                     @Override
                     public void onResponse(Favorito[] response) {
                         if (response != null) {
-                            for (Favorito fav : response) {
-                                Log.e("DIRECCION: ", fav.direccion.toString());
-                            }
-                            /**
-                             //Crea contenedor
-                             LinearLayout contenedor = new LinearLayout(getApplicationContext());
-                             contenedor.setLayoutParams(new LinearLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
-                             contenedor.setOrientation(LinearLayout.VERTICAL);
-                             contenedor.setGravity(Gravity.CENTER);
-                             //Crea ImageView y TextView
-                             ImageView miImageView = new ImageView(getApplicationContext());
-                             TextView miTextView = new TextView(getApplicationContext());
-                             //Agrega propiedades al TextView.
-                             miTextView.setText("mi TextView");
-                             miTextView.setBackgroundColor(Color.BLUE);
-                             //Agrega imagen al ImageView.
-                             miImageView.setImageResource(R.mipmap.ic_launcher);
-
-                             //Agrega vistas al contenedor.
-                             contenedor.addView(miTextView);
-                             contenedor.addView(miImageView);
-                             */
+                            favoritosLista = new Favorito[response.length];
+                            favoritosLista = response;
                         } else {
-                            Toast.makeText(Bienvenido.this, "No posee ningún lugar favorito", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(Bienvenido.this, "No posee ningún lugar favorito", Toast.LENGTH_SHORT).show();
                         }
                     }
                 },
                 new com.android.volley.Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(Bienvenido.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(Bienvenido.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e("Error", error.getMessage());
 
                         return;
                     }
                 }
         );
 
-        dialog.setView(register_Layout);
-
-        dialog.setPositiveButton("Agregar",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        mostrarAgregarFavs();
-                    }
-                });
-
-        dialog.setNegativeButton("Atras", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.dismiss();
-            }
-        });
-
-        dialog.show();
+        requestQueue.add(favoritos);
     }
 
     @Override
