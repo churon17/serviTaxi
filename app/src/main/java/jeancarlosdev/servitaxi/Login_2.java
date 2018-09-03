@@ -86,12 +86,6 @@ public class Login_2 extends AppCompatActivity {
     //endregion
 
     @Override
-    protected void attachBaseContext(Context newBase) {
-
-        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -137,6 +131,14 @@ public class Login_2 extends AppCompatActivity {
 
         eventosOnClickBtns();
     }
+
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
+
 
     private void autoLogin(final String user, String pass) {
 
@@ -337,9 +339,7 @@ public class Login_2 extends AppCompatActivity {
                                                                                                                                 Paper.book().write(Common.imagen, ruta);
 
                                                                                                                                 Toast.makeText(Login_2.this,
-
                                                                                                                                         R.string.mensajePass,
-
                                                                                                                                         Toast.LENGTH_LONG).show();
 
                                                                                                                                 Intent intencion = new Intent(getApplicationContext(),
@@ -580,9 +580,7 @@ public class Login_2 extends AppCompatActivity {
         final MaterialEditText etxtContrasenaInicio = inicioSesion_layout.
                 findViewById(R.id.etxtContrasenaInicio);
 
-
         dialogInicio.setView(inicioSesion_layout);
-
 
         dialogInicio.setPositiveButton("INICIAR SESION",
                 new DialogInterface.OnClickListener() {
@@ -661,6 +659,7 @@ public class Login_2 extends AppCompatActivity {
                                                         @Override
                                                         public void onSuccess(AuthResult authResult) {
 
+                                                            Log.e("EXTERNAL", response.external);
 
                                                             Paper.book().write(Common.cliente, etxtEmailInicio.getText().toString());
                                                             Paper.book().write(Common.password, etxtContrasenaInicio.getText().toString());
