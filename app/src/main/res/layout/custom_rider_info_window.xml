@@ -32,7 +32,7 @@
 
             <TextView
                 android:id="@+id/txtPickUpInfo"
-                android:text="PickUp Here"
+                android:text="Solicitar Aqui!"
                 android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />

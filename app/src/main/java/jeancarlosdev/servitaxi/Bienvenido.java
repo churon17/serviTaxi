@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -71,7 +72,11 @@ import com.google.gson.Gson;
 import com.rengwuxian.materialedittext.MaterialEditText;
 import com.squareup.picasso.Picasso;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.HashMap;
+import java.util.List;
 
 import dmax.dialog.SpotsDialog;
 import io.paperdb.Paper;
@@ -452,10 +457,26 @@ public class Bienvenido extends AppCompatActivity
     }
 
     private void agregarFav() {
+        String direccionText = "";
+        Geocoder geocoder = new Geocoder(getApplicationContext());
+        List<android.location.Address> direcciones = null;
+
+        try {
+            direcciones = geocoder.getFromLocation(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude(),1);
+        } catch (Exception e) {
+            Log.d("Error", "Error en geocoder:"+e.toString());
+        }
+
+        if(direcciones != null && direcciones.size() > 0 ){
+
+            android.location.Address direccion = direcciones.get(0);
+
+            direccionText = direccion.getThoroughfare();
+        }
 
         HashMap<String, String> mapa = new HashMap<>();
         mapa.put("external",  String.valueOf(Paper.book().read(Common.external_id)));
-        mapa.put("direccion", "Prueba");
+        mapa.put("direccion", String.valueOf(direccionText));
         mapa.put("latitud", String.valueOf(mUltimaUbicacion.getLatitude()));
         mapa.put("longitud", String.valueOf(mUltimaUbicacion.getLongitude()));
 
@@ -469,7 +490,8 @@ public class Bienvenido extends AppCompatActivity
                                 || "DNF".equalsIgnoreCase(response.Siglas))) {
                             Toast.makeText(Bienvenido.this, response.Mensaje, Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(Bienvenido.this, response.Mensaje, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(Bienvenido.this, "Se agregó correctamente", Toast.LENGTH_SHORT).show();
+                            listaFavoritos();
                         }
                     }
                 },
@@ -1174,9 +1196,11 @@ public class Bienvenido extends AppCompatActivity
         final ArrayAdapter<String> arrayAdapterNombre = new ArrayAdapter<String>(Bienvenido.this, android.R.layout.select_dialog_singlechoice);
         final ArrayAdapter<Favorito> arrayAdapter = new ArrayAdapter<Favorito>(Bienvenido.this, android.R.layout.select_dialog_singlechoice);
 
-        for (Favorito fav : favoritosLista) {
-            arrayAdapter.add(fav);
-            arrayAdapterNombre.add(String.valueOf(fav.getDireccion()));
+        if (favoritosLista != null){
+            for (Favorito fav : favoritosLista) {
+                arrayAdapter.add(fav);
+                arrayAdapterNombre.add(String.valueOf(fav.getDireccion()));
+            }
         }
 
         builderSingle.setPositiveButton("Agregar", new DialogInterface.OnClickListener() {
