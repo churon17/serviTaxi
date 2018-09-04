@@ -801,7 +801,7 @@ public class Bienvenido extends AppCompatActivity
                                                                                 .flat(true)
                                                                                 .title(cliente.getNombre())
                                                                                 .icon(BitmapDescriptorFactory
-                                                                                        .fromResource(R.drawable.car)));
+                                                                                        .fromResource(R.drawable.rueda)));
                                                             }
 
                                                             @Override
