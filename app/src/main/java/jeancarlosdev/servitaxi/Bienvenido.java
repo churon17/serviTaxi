@@ -197,6 +197,12 @@ public class Bienvenido extends AppCompatActivity
      */
     boolean conductorEncontrado = false;
 
+    boolean conductorEncontradoFav = false;
+
+    double latFav = 0;
+
+    double lonFav = 0;
+
     String driver_idGlob = "";
 
     int radio = 1;
@@ -307,10 +313,10 @@ public class Bienvenido extends AppCompatActivity
             public void onClick(View view) {
 
                 if (!conductorEncontrado) {
-
                     requestPickUpHere(FirebaseAuth.getInstance().getCurrentUser().getUid());
-
-                } else {
+                } else if (conductorEncontradoFav){
+                    sendRequestToDriverFavorito(driver_idGlob, latFav, lonFav);
+                } else if (conductorEncontrado){
                     sendRequestToDriver(driver_idGlob);
                 }
 
@@ -411,6 +417,7 @@ public class Bienvenido extends AppCompatActivity
 
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
                                                 conductorEncontrado = false;
+                                                conductorEncontradoFav = false;
                                                 driver_idGlob = "";
                                                 btnSolicitarTaxi.setText("Solicitar Taxi");
                                             } else {
@@ -477,6 +484,7 @@ public class Bienvenido extends AppCompatActivity
                                             if (response.body().success == 1) {
 
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
+                                                conductorEncontradoFav = false;
                                                 conductorEncontrado = false;
                                                 driver_idGlob = "";
                                                 btnSolicitarTaxi.setText("Solicitar Taxi");
@@ -713,10 +721,11 @@ public class Bienvenido extends AppCompatActivity
         });
     }
 
+
     /**
      * Método que nos sirve para encontrar los Taxis cercanos a nuestra ubicación previamente solicitada en Favoritos.
      */
-    private void findDriversFavorito(Double latitud, Double longitud) {
+    private void findDriversFavorito(final Double latitud, final Double longitud) {
         DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
 
         GeoFire gfDrivers = new GeoFire(drivers);
@@ -728,8 +737,8 @@ public class Bienvenido extends AppCompatActivity
             public void onKeyEntered(String key, GeoLocation location) {
                 //Si lo encuentra
 
-                if (!conductorEncontrado) {
-                    conductorEncontrado = true;
+                if (!conductorEncontradoFav) {
+                    conductorEncontradoFav = true;
                     driver_idGlob = key;
                     btnSolicitarTaxi.setText("Llamar Taxi");
                     Toast.makeText(Bienvenido.this, "Taxi Encontrado!", Toast.LENGTH_SHORT).show();
@@ -749,9 +758,9 @@ public class Bienvenido extends AppCompatActivity
             @Override
             public void onGeoQueryReady() {
                 //Si no encuentra un conductor, aumentar radio
-                if (!conductorEncontrado) {
+                if (!conductorEncontradoFav) {
                     radio++;
-                    findDrivers();
+                    findDriversFavorito(latitud, longitud);
                 }
             }
 
@@ -1305,10 +1314,10 @@ public class Bienvenido extends AppCompatActivity
                 builderInner.setPositiveButton("Solicitar", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog,int which) {
-                        if (!conductorEncontrado) {
+                        if (!conductorEncontradoFav) {
+                            latFav = Double.valueOf(fav.getLatitud());
+                            lonFav = Double.valueOf(fav.getLongitud());
                             requestPickUpHereFavorito(FirebaseAuth.getInstance().getCurrentUser().getUid(), Double.valueOf(fav.getLatitud()), Double.valueOf(fav.getLongitud()));
-                        } else {
-                            sendRequestToDriverFavorito(driver_idGlob, Double.valueOf(fav.getLatitud()), Double.valueOf(fav.getLongitud()));
                         }
                     }
                 });
