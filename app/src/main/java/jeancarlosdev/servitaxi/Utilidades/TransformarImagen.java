@@ -7,7 +7,17 @@ import android.graphics.Paint;
 
 import com.squareup.picasso.Transformation;
 
+/***
+ * Clase utilizada para transformar una imagen cuadrada en circular.
+ * Esta clase nos servira si el usuario se Loguea con facebook, podemos extraer la imagen de su perfil de facebook y de esta manera poderla mostrar en serviTaxi de forma más estética.
+ */
 public class  TransformarImagen implements Transformation {
+    /***
+     * Sobreescribimos el método transform para adaptarlo a nuestras necesidades.
+     * @param source nos recibe un objeto de tipo Bitmap que va a ser nuestra imagen para transformar
+     * @return retorna nuestra imagen pero ya circular.
+     */
+
     @Override
     public Bitmap transform(Bitmap source) {
         int size = Math.min(source.getWidth(), source.getHeight());

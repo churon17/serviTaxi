@@ -98,7 +98,16 @@ import jeancarlosdev.servitaxi.Utilidades.TransformarImagen;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
+/***
+ * Clase utilizada para implementar y hacer uso el Mapa de GoogleMaps.
+ * En esta clase también se implementa Places, para buscar ubicaciones en la Api de Places de GoogleMaps.
+ * Esta clase tambien es la contenedera para acceder a distintas actividades como cerrar sesión, cambiar contraseña.
+ * Implementa Cuatro interfaces necesarias para manipular en tiempo real la ubicación del usuario.
+ * @see com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks
+ * @see com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener
+ * @see com.google.android.gms.location.LocationListener
+ * @see NavigationView.OnNavigationItemSelectedListener
+ */
 public class Bienvenido extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         OnMapReadyCallback,
@@ -108,40 +117,84 @@ public class Bienvenido extends AppCompatActivity
 
     //region Atributos
 
+    /***
+     * El Fragment utilizado para nuestro Mapa.
+     */
     SupportMapFragment mapFragment;
 
+    /***
+     * Para mostrar el mapa con el que vamos a trabajar.
+     */
     private GoogleMap mMap;
 
+    /***
+     * Para ver si el usuario dio los permisos necesarios de Localización.
+     */
     private static final int PERMISSION_REQUEST_CODE = 7777;
 
+    /***
+     * Para ver si el usuario dio los permisos necesarios de Localización.
+     */
     private static final int PLAY_SERVICE_REQUEST_CODE = 7778;
 
+    /***
+     * LocationRequest se utiliza para solicitar una calidad de servicio para las actualizaciones de ubicación desde FusedLocationProviderApi.
+     */
     private LocationRequest mLocationRequest;
 
+    /***
+     * Trabaja conjuntamente con LocationRequest, para las actualizaciones de ubicación.
+     */
     private GoogleApiClient mGoogleApiClient;
 
+    /***
+     * Variable de tipo LOCATION utilizada para mantener constantemente el valor de latitud y longitud del conductor.
+     */
     private Location mUltimaUbicacion;
 
+    /***
+     * Para cambiar el intervalo de actualización de LocationRequest para la ubicación en tiempo real.
+     */
     private static int UPDATE_INTERVAL = 5000;
 
+    /***
+     * Para cambiar el intervalo de actualización de LocationRequest para la ubicación en tiempo real.
+     */
     private static int FATEST_INTERVAL = 3000;
 
+    /***
+     * Para cambiar el intervalo de actualización de LocationRequest para la ubicación en tiempo real.
+     */
     private static int DISPLACEMENT = 5000;
 
+    /***
+     * Referencia a la base de datos de Firebase.
+     */
     DatabaseReference ref;
 
+    /***
+     * Para consultas de ubicacion en tiempo real con Firebase.
+     */
     GeoFire geoFire;
 
+    /***
+     * Para agregar o quitar el marcador cuando deseemos dentro de nuestro mapa.
+     */
     private Marker mUserMarker;
 
+    /***
+     * Variable utiliza para agregar posteriormente la lista de Favoritos.
+     */
     private Favorito[] favoritosLista;
 
-    ImageView imgExpandable;
+    /**
+     * Boton que se utilizará para solicitar Taxi.
+     */
+    Button btnSolicitarTaxi;
 
-    BottomSheetRiderFragment mBottomSheet;
-
-    Button btnPickUpRequest;
-
+    /**
+     * Para verificar si se ha encontrado un conductor.
+     */
     boolean conductorEncontrado = false;
 
     String driver_idGlob = "";
@@ -152,57 +205,56 @@ public class Bienvenido extends AppCompatActivity
 
     private static final int LIMIT = 3;
 
+    /***
+     * Para crear un objeto de tipo IFCMService para peticiones en Firebase Cloud Messaging.
+     */
     IFCMService mService;
 
     //Presense System
 
+    /**
+     * Referencia de la base de datos de Firebase.
+     */
     DatabaseReference driverAvailable;
 
     //Load Data From Last Intent
 
     String url, nombre, email;
 
+    /***
+     * HashMap utilizado para constantemente enviar y recibir información del servidor.
+     */
     HashMap<String, String> mapa;
 
+    /***
+     * Variable de Tipo RequestQueue para ejecutar nuestras peticiones con Volley.
+     */
     private RequestQueue requestQueue;
 
     //endregion
 
-
-    private void cerrarSesion() {
-
-        Paper.init(this);
-
-        Paper.book().destroy();
-
-        LoginManager.getInstance().logOut();
-
-        FirebaseAuth.getInstance().signOut();
-
-        Intent intent = new Intent(Bienvenido.this, Login_2.class);
-
-        startActivity(intent);
-
-        finish();
-    }
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.frm_bienvenido);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
         setSupportActionBar(toolbar);
 
         mService = Common.getFCMService();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
+
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+
         navigationView.setNavigationItemSelectedListener(this);
 
         View hView = navigationView.getHeaderView(0);
@@ -248,28 +300,16 @@ public class Bienvenido extends AppCompatActivity
 
         geoFire = new GeoFire(ref);
 
-        imgExpandable = (ImageView) findViewById(R.id.imgExpandable);
+        btnSolicitarTaxi = findViewById(R.id.btnPickUpRequest);
 
-        mBottomSheet = BottomSheetRiderFragment.newInstance("Rider Bottom sheet");
-
-        imgExpandable.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mBottomSheet.show(getSupportFragmentManager()
-                        , mBottomSheet.getTag());
-
-            }
-        });
-
-
-        btnPickUpRequest = findViewById(R.id.btnPickUpRequest);
-
-        btnPickUpRequest.setOnClickListener(new View.OnClickListener() {
+        btnSolicitarTaxi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 if (!conductorEncontrado) {
+
                     requestPickUpHere(FirebaseAuth.getInstance().getCurrentUser().getUid());
+
                 } else {
                     sendRequestToDriver(driver_idGlob);
                 }
@@ -284,7 +324,39 @@ public class Bienvenido extends AppCompatActivity
         updateFirebaseToken();
     }
 
+    /***
+     * Método que se ejecuta cuando se cierra sesión.
+     */
+    private void cerrarSesion() {
+
+        Paper.init(this);
+
+        Paper.book().destroy();
+
+        LoginManager.getInstance().logOut();
+
+        FirebaseAuth.getInstance().signOut();
+
+        Intent intent = new Intent(Bienvenido.this, Login_2.class);
+
+        startActivity(intent);
+
+        finish();
+    }
+
+    /***
+     * Sobreescritura del método, que nos ayudara a realizar distintas funcionalidad.
+     * Cada vez que se abre la aplicación se verifica si anteriormente ya ha existido una sesión abiert, para de esta manera no estar ingresando nuevamente los datos.
+     * @param savedInstanceState
+     */
+
+
+    /***
+     * Método que nos sirve para actualizar el Token del Conductor en la Tabla de Firebase.
+     * No recibe parámetros.
+     */
     private void updateFirebaseToken() {
+
         FirebaseDatabase db = FirebaseDatabase.getInstance();
 
         DatabaseReference tokens = db.getReference(Common.token_tb1);
@@ -295,6 +367,11 @@ public class Bienvenido extends AppCompatActivity
 
     }
 
+    /***
+     * Método que nos sirve para enviar peticion al Conductor, envia notificación al usuario de la App serviTaxi Conductor.
+     * @param driver_id recibe como parametro un String id, que va a ser utilizado para identificar al conductor que se le va a enviar.
+     */
+
     private void sendRequestToDriver(final String driver_id) {
 
         DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token_tb1);
@@ -303,7 +380,6 @@ public class Bienvenido extends AppCompatActivity
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
 
                         for (DataSnapshot postSnapShot : dataSnapshot.getChildren()) {
 
@@ -336,7 +412,7 @@ public class Bienvenido extends AppCompatActivity
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
                                                 conductorEncontrado = false;
                                                 driver_idGlob = "";
-                                                btnPickUpRequest.setText("Solicitar Taxi");
+                                                btnSolicitarTaxi.setText("Solicitar Taxi");
                                             } else {
 
                                                 Toast.makeText(Bienvenido.this, "La Peticion Fallo", Toast.LENGTH_SHORT).show();
@@ -358,6 +434,10 @@ public class Bienvenido extends AppCompatActivity
                 });
     }
 
+    /***
+     * Método que nos sirve para enviar peticion favorita al Conductor, envia notificación al usuario de la App serviTaxi Conductor.
+     * @param driver_id recibe como parametro un String id, que va a ser utilizado para identificar al conductor que se le va a enviar.
+     */
     private void sendRequestToDriverFavorito(final String driver_id, final Double latitud, final Double longitud) {
 
         DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token_tb1);
@@ -399,7 +479,7 @@ public class Bienvenido extends AppCompatActivity
                                                 Toast.makeText(Bienvenido.this, "Peticion Enviada", Toast.LENGTH_SHORT).show();
                                                 conductorEncontrado = false;
                                                 driver_idGlob = "";
-                                                btnPickUpRequest.setText("Solicitar Taxi");
+                                                btnSolicitarTaxi.setText("Solicitar Taxi");
                                             } else {
 
                                                 Toast.makeText(Bienvenido.this, "La Peticion Fallo", Toast.LENGTH_SHORT).show();
@@ -421,6 +501,9 @@ public class Bienvenido extends AppCompatActivity
                 });
     }
 
+    /***
+     * Método que nos srive para mostrar la ventana de Agregar Favoritos.
+     */
     private void mostrarAgregarFavs() {
 
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
@@ -456,6 +539,9 @@ public class Bienvenido extends AppCompatActivity
 
     }
 
+    /**
+     * Método que nos sirve para agregar Favoritos a nuestro servicio.
+     */
     private void agregarFav() {
         String direccionText = "";
         Geocoder geocoder = new Geocoder(getApplicationContext());
@@ -508,6 +594,10 @@ public class Bienvenido extends AppCompatActivity
         requestQueue.add(agregarFav);
     }
 
+    /**
+     * Método que nos ayuda a buscar Taxis en nuestra zona, en el radio establecido para nuestra ubicación actual.
+     * @param uid este parametro creará una nueva solicitud en la BD de firebase.
+     */
     private void requestPickUpHere(String uid) {
 
         DatabaseReference dbRequest = FirebaseDatabase.getInstance().getReference(Common.solicitud_tb1);
@@ -523,7 +613,7 @@ public class Bienvenido extends AppCompatActivity
         }
 
         mUserMarker = mMap.addMarker(new MarkerOptions()
-                .title("PickUp Here")
+                .title("Usted")
                 .snippet("")
                 .position(new LatLng(mUltimaUbicacion.getLatitude(),
                         mUltimaUbicacion.getLongitude()))
@@ -532,16 +622,21 @@ public class Bienvenido extends AppCompatActivity
 
         mUserMarker.showInfoWindow();
 
-        btnPickUpRequest.setText("Encontrando tu Taxi....");
+        btnSolicitarTaxi.setText("Encontrando tu Taxi....");
 
         findDrivers();
     }
 
+    /**
+     * Método que nos ayuda a buscar Taxis en nuestra zona, en el radio establecido para nuestra ubicación escogida de Favoritos.
+     * @param uid este parametro creará una nueva solicitud en la BD de firebase.
+     */
     private void requestPickUpHereFavorito(String uid, Double latitud, Double longitud) {
 
         DatabaseReference dbRequest = FirebaseDatabase.getInstance().getReference(Common.solicitud_tb1);
 
         GeoFire mGeoFire = new GeoFire(dbRequest);
+
         mGeoFire.setLocation(uid, new GeoLocation(latitud
                 , longitud));
 
@@ -552,7 +647,7 @@ public class Bienvenido extends AppCompatActivity
         }
 
         mUserMarker = mMap.addMarker(new MarkerOptions()
-                .title("PickUp Here")
+                .title("Favorito")
                 .snippet("")
                 .position(new LatLng(latitud,
                         longitud))
@@ -561,18 +656,24 @@ public class Bienvenido extends AppCompatActivity
 
         mUserMarker.showInfoWindow();
 
-        btnPickUpRequest.setText("Encontrando tu Taxi....");
+        btnSolicitarTaxi.setText("Encontrando tu Taxi....");
 
         findDriversFavorito(latitud, longitud);
     }
 
+    /**
+     * Método que nos sirve para encontrar los Taxis cercanos a nuestra ubicación.
+     */
     private void findDrivers() {
+
         DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
 
         GeoFire gfDrivers = new GeoFire(drivers);
 
         GeoQuery geoQuery = gfDrivers.queryAtLocation(new GeoLocation(mUltimaUbicacion.getLatitude(), mUltimaUbicacion.getLongitude()), radio);
+
         geoQuery.removeAllListeners();
+
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
@@ -581,7 +682,7 @@ public class Bienvenido extends AppCompatActivity
                 if (!conductorEncontrado) {
                     conductorEncontrado = true;
                     driver_idGlob = key;
-                    btnPickUpRequest.setText("Llamar Taxi");
+                    btnSolicitarTaxi.setText("Llamar Taxi");
                     Toast.makeText(Bienvenido.this, "Taxi Encontrado!", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -612,6 +713,9 @@ public class Bienvenido extends AppCompatActivity
         });
     }
 
+    /**
+     * Método que nos sirve para encontrar los Taxis cercanos a nuestra ubicación previamente solicitada en Favoritos.
+     */
     private void findDriversFavorito(Double latitud, Double longitud) {
         DatabaseReference drivers = FirebaseDatabase.getInstance().getReference(Common.drivers_tb1);
 
@@ -627,7 +731,7 @@ public class Bienvenido extends AppCompatActivity
                 if (!conductorEncontrado) {
                     conductorEncontrado = true;
                     driver_idGlob = key;
-                    btnPickUpRequest.setText("Llamar Taxi");
+                    btnSolicitarTaxi.setText("Llamar Taxi");
                     Toast.makeText(Bienvenido.this, "Taxi Encontrado!", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -680,6 +784,10 @@ public class Bienvenido extends AppCompatActivity
         }
     }
 
+    /***
+     * Método que nos ayuda a cambiar la Localización.
+     * Esté metodo checa si el usuario ha dado los permisos necesarios que necesita para obtener la ubicación del Cliente.
+     */
     private void setUpLocation() {
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
@@ -703,6 +811,10 @@ public class Bienvenido extends AppCompatActivity
         }
     }
 
+    /***
+     * Método que muestra la ubicación actual y la muestra con un nuevo marker en el Mapa.
+     * Esté  método a su vez manda a guardar constantemente la ubicación actual por Geofire a Firebase.
+     */
     private void displayLocation() {
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
@@ -785,7 +897,7 @@ public class Bienvenido extends AppCompatActivity
          * Ahora agregamos nuevamente nuestra ubicacion.
          * */
 
-        mMap.addMarker(new MarkerOptions().
+         mUserMarker = mMap.addMarker(new MarkerOptions().
                 icon(BitmapDescriptorFactory.fromResource(R.drawable.person))
                 .position(new LatLng(mUltimaUbicacion.getLatitude(),
                         mUltimaUbicacion.getLongitude()))
@@ -823,7 +935,9 @@ public class Bienvenido extends AppCompatActivity
                                                                                 .flat(true)
                                                                                 .title(cliente.getNombre())
                                                                                 .icon(BitmapDescriptorFactory
-                                                                                        .fromResource(R.drawable.rueda)));
+                                                                                        .fromResource(R.drawable.rueda
+
+                                                                                        )));
                                                             }
 
                                                             @Override
@@ -859,6 +973,10 @@ public class Bienvenido extends AppCompatActivity
         });
     }
 
+    /**
+     * Este método crea una nueva instancia de tipo LocationRequest.
+     * Esta instancia nos permitirá manipular la ubicación actual del conductor, cada que momento necesitamos actualizar el intervalo.
+     */
     private void createLocationRequest() {
 
         mLocationRequest = new LocationRequest();
@@ -869,6 +987,10 @@ public class Bienvenido extends AppCompatActivity
 
     }
 
+    /**
+     * Este método crea una nueva instancia de tipo GoogleApiClient.
+     * Esta instancia trabajará conjuntamente con LocationRequest para la manipulación de la clase Actual.
+     */
     private void buildGoogleApiClient() {
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -882,6 +1004,12 @@ public class Bienvenido extends AppCompatActivity
 
     }
 
+    /***
+     * Método utiliado para verificar si los servicios han sido concedidos por el usuario.
+     * @return boolean.
+     * True si todo esta correcto y los servicios han sido concedidos sin ningún problema.
+     * False si los permisos no han sido concedidos.
+     */
     private boolean checkPlayServices() {
 
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
@@ -903,64 +1031,10 @@ public class Bienvenido extends AppCompatActivity
         return true;
     }
 
-
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.bienvenido, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        if (id == R.id.cerrarSesion) {
-
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_favoritos) {
-            mostrarVentanaFavs();
-        } else if (id == R.id.nav_quienes) {
-            mostrarVentanaQuien();
-
-        } else if (id == R.id.cerrarSesion) {
-
-            cerrarSesion();
-        } else if (id == R.id.cambiarContrasena) {
-
-            cambiarContrasena();
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
+    /***
+     * Método que nos mostrara la ventana de cambiar contraseña.
+     * A su vez cambia la contraseña tanto en firebase, Servicio o en Firebase Real Time Database.
+     */
     private void cambiarContrasena() {
 
         final String external = Paper.book().read(Common.external_id);
@@ -1167,7 +1241,10 @@ public class Bienvenido extends AppCompatActivity
 
         dialogInicio.show();
     }
-
+    /***
+     * Método que nos mostrara la ventana de ?Quiénes somos?.
+     * Esta ventana muestra la información de quienes desarrollarón esta app.
+     */
     private void mostrarVentanaQuien() {
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
 
@@ -1187,9 +1264,10 @@ public class Bienvenido extends AppCompatActivity
                 });
         dialog.show();
     }
-
+    /***
+     * Este método nos muestra la  ventana de los favoritos del Cliente actualmente Logueado.
+     */
     private void mostrarVentanaFavs() {
-
         AlertDialog.Builder builderSingle = new AlertDialog.Builder(Bienvenido.this);
         builderSingle.setTitle("Favoritos: ");
 
@@ -1244,59 +1322,10 @@ public class Bienvenido extends AppCompatActivity
             }
         });
         builderSingle.show();
-
-
-
-        /**
-         * AlertDialog.Builder builderSingle = new AlertDialog.Builder(Bienvenido.this);
-         builderSingle.setTitle("Favoritos: ");
-
-         final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(Bienvenido.this, android.R.layout.select_dialog_singlechoice);
-
-         for (Favorito fav : favoritosLista) {
-         arrayAdapter.add(String.valueOf(fav.getDireccion()));
-         }
-
-         builderSingle.setPositiveButton("Agregar", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialogInterface, int i) {
-        mostrarAgregarFavs();
-        }
-        });
-
-         builderSingle.setNegativeButton("Atrás", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-        dialog.dismiss();
-        }
-        });
-
-         builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(final DialogInterface dialog, int which) {
-        String strName = arrayAdapter.getItem(which);
-        AlertDialog.Builder builderInner = new AlertDialog.Builder(Bienvenido.this);
-        builderInner.setMessage(strName);
-        builderInner.setTitle("Solicitar Taxi en ");
-        builderInner.setPositiveButton("Solicitar", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog,int which) {
-        dialog.dismiss();
-        }
-        });
-        builderInner.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialogInterface, int i) {
-        dialog.dismiss();
-        }
-        });
-        builderInner.show();
-        }
-        });
-         builderSingle.show();
-         */
     }
-
+    /**
+     * Este método nos ayuda a listar todos los Favoritos para poder cargarlo en la Ventana de Favoritos.
+     */
     public void listaFavoritos(){
         String external = String.valueOf(Paper.book().read(Common.external_id));
 
@@ -1326,6 +1355,86 @@ public class Bienvenido extends AppCompatActivity
         );
 
         requestQueue.add(favoritos);
+    }
+    /**
+     * Esté método nos ayuda para inicializar la busqueda de Actualizaciones de las Localizaciones.
+     * Checando previamente si los permisos estan correcctamente concedidos.
+     */
+    private void startLocationUpdates() {
+
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
+                .PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager
+                .PERMISSION_GRANTED) {
+
+            return;
+        }
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                mLocationRequest, this
+        );
+
+
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.bienvenido, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        if (id == R.id.cerrarSesion) {
+
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_favoritos) {
+            mostrarVentanaFavs();
+        } else if (id == R.id.nav_quienes) {
+            mostrarVentanaQuien();
+
+        } else if (id == R.id.cerrarSesion) {
+
+            cerrarSesion();
+        } else if (id == R.id.cambiarContrasena) {
+
+            cambiarContrasena();
+
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
     }
 
     @Override
@@ -1378,25 +1487,6 @@ public class Bienvenido extends AppCompatActivity
     public void onConnected(@Nullable Bundle bundle) {
         displayLocation();
         startLocationUpdates();
-    }
-
-    private void startLocationUpdates() {
-
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
-                .PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager
-                .PERMISSION_GRANTED) {
-
-            return;
-        }
-
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
-                mLocationRequest, this
-        );
-
-
     }
 
     @Override

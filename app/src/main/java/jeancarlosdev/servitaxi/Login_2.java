@@ -65,26 +65,78 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 public class Login_2 extends AppCompatActivity {
 
     //region Atributos
-    private Button btnSignIn, btnRegister;
-    private RelativeLayout layoutPrincipal;
-    private FirebaseAuth auth;
-    private FirebaseDatabase db;
-    DatabaseReference clientes;
-    private CallbackManager callbackManager;
-    private LoginButton loginButton;
-    private String name;
+    /***
+     * Botón que nos ayudará para abrir la ventana de Login.
+     */
+    private Button btnSignIn;
 
+    /**
+     * Botón que nos ayudará a abrir la ventana de Registro.
+     */
+    Button btnRegister;
+    /***
+     * Variable de tipo RelativeLayout para posteriormente hacer uso del mismo en distintas métodos.
+     */
+    private RelativeLayout layoutPrincipal;
+
+    /**
+     * Para la Autentificación y manipulación con Firebase.
+     */
+    private FirebaseAuth auth;
+
+    /**
+     * Atributo para poder utilizar la Base de Datos de Firebase
+     */
+    private FirebaseDatabase db;
+
+    /**
+     * Atributo para hacer referencia a la tabla clientes.
+     */
+    DatabaseReference clientes;
+
+    /**
+     * Atributo de tipo CallBackManager utilizado para obtener datos de Facebook.
+     */
+    private CallbackManager callbackManager;
+
+
+    /**
+     * Botón utilizada para iniciar sesión.
+     */
+    private LoginButton loginButton;
+
+    /***
+     * Variable utilizada para poder realizar las peticiones con Volley
+     */
     private RequestQueue requestQueue;
 
+    /***
+     * HashMap utilizado para constantemente enviar y recibir información del servidor.
+     */
     HashMap<String, String> mapa;
 
+    /***
+     * Variable utilizada para almacenar el nombre del usuario previamente Logueado
+     */
     String nombre;
 
+    /**
+     * Variable utilizada para almacenar el email del usuario previamente Logueado
+     */
     String user;
 
+    /**
+     * Variable utilizada para guardar  la URL de la imagen de Facebook, en caso el usuario se haya Logueado con Facebook.
+     */
     String imagen;
     //endregion
 
+
+    /***
+     * Sobreescritura del método onCreate para inicializar todas las variables que se van a utilizar en la ejecución de nuestra clase.
+     * En esta clase también se verifica si previamente ha habido un usuario Logueado para no volver a pedir los datos de inicio de sesión nuevamente.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -139,7 +191,13 @@ public class Login_2 extends AppCompatActivity {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
-
+    /**
+     * Método que nos ayudará para verificar si previamente ha existido una sesión y no se ha cerrado.
+     * Si es que no se ha cerrado la sesión automaticamente lo Redirigira a la Actividad Bienvenido.
+     * @param user para verificar con Firebase y el servicio.
+     * @param pass para verificar con Firebase y el servicio.
+     * Estos dos parametros se obtendran previamente de los Paper.
+     */
     private void autoLogin(final String user, String pass) {
 
         final android.app.AlertDialog dialogoEspera = new SpotsDialog(Login_2.this);
@@ -207,7 +265,14 @@ public class Login_2 extends AppCompatActivity {
 
     }
 
+
     //region Metodos Propios
+
+    /***
+     * Método que nos ayudará para ejecutar los eventos de los Botones.
+     * LoginFacebook, IniciarSesion, Registrar.
+     */
+
     public void eventosOnClickBtns() {
         //Inicio de Sesion Facebook
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
@@ -536,7 +601,6 @@ public class Login_2 extends AppCompatActivity {
             }
         });
 
-
         //Mostrar Ventana Registrar
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -554,7 +618,10 @@ public class Login_2 extends AppCompatActivity {
         });
     }
 
-
+    /**
+     * Método que nos ayudara para presentar mensajes en un Toast.
+     * @param identificador_mensaje el id del mensaje almacenado en el archivo Strings.
+     */
     private void mostrarMensaje(int identificador_mensaje) {
 
         Toast.makeText(Login_2.this,
@@ -562,6 +629,9 @@ public class Login_2 extends AppCompatActivity {
                 Toast.LENGTH_SHORT).show();
     }
 
+    /***
+     * Muestra la ventana para Loguear al Conductor, este autentificación se hace tanto para Firebase como para el Servicio.
+     */
     private void mostrarVentanaLogin() {
         AlertDialog.Builder dialogInicio = new AlertDialog.Builder(this);
 
@@ -728,6 +798,9 @@ public class Login_2 extends AppCompatActivity {
 
     }
 
+    /***
+     * Muestra la ventana para registrar al Conductor, este registro se hace tanto para Firebase como para el Servicio.
+     */
     private void mostrarVentanaRegistro() {
 
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);

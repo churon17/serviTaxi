@@ -8,9 +8,15 @@ import com.google.firebase.iid.FirebaseInstanceIdService;
 
 import jeancarlosdev.servitaxi.Common.Common;
 import jeancarlosdev.servitaxi.Modelos.Token;
-
+/***
+ * Clase utilizada para manipular distintos métodos para alterar la BD en firebase, por medio de los Tokens.
+ */
 public class MyFirebaseIdService extends FirebaseInstanceIdService{
 
+    /***
+     * Sobreescribimos el método onTokenRefresh, que nos permitirá obtener el token actual.
+     * A su vez invoca al método updateTokenToserver.
+     */
     @Override
     public void onTokenRefresh() {
         super.onTokenRefresh();
@@ -20,6 +26,10 @@ public class MyFirebaseIdService extends FirebaseInstanceIdService{
 
     }
 
+    /***
+     * Esté método nos permitira refrescar la tabla Token en Firebase, con los token actualizados.
+     * @param refreshedToken recibe como parametro un String, que será utilizado para crear un nuevo Token.
+     */
     private void updateTokenToServer(String refreshedToken) {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
         DatabaseReference tokens = db.getReference(Common.token_tb1 );

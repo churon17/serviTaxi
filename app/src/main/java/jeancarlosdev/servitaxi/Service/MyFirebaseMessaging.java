@@ -15,10 +15,17 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import jeancarlosdev.servitaxi.Modelos.Notification;
 import jeancarlosdev.servitaxi.R;
-
-
+/***
+ * Clase utilizada para la recepción de la Notificacion.
+ */
 public class MyFirebaseMessaging extends FirebaseMessagingService {
 
+    /***
+     * Sobreescribimos el método onMessageReceived, cuando se reciba  el RemoteMessage
+     * Este método se ejecuta automáticamente cuando se reciba el RemoteMessage.
+     * Este método nos ayudara a determinar que notificación va a llegar del serviTaxi Conductor para de esta manera presentarla al cliente.
+     * @param remoteMessage
+     */
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) {
         if(remoteMessage.getNotification().getTitle().equals("Lo sentimos")){
@@ -43,6 +50,7 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
         }else if(remoteMessage.getNotification().getTitle().equals("Llegada")){
 
             showArrivedNotification(remoteMessage.getNotification().getBody());
+
         }else if(remoteMessage.getNotification().getTitle().equals("Aceptado")){
             Handler handler = new Handler(Looper.getMainLooper());
 
@@ -62,6 +70,10 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
 
     }
 
+    /**
+     * Este método muestra una notificación cuando el chofer ha llegado al radio de la ubicacion  del cliente.
+     * @param body
+     */
     private void showArrivedNotification(String body) {
         PendingIntent contentIntent = PendingIntent.getActivity(getBaseContext(),
                                 0, new Intent(), PendingIntent.FLAG_ONE_SHOT);
