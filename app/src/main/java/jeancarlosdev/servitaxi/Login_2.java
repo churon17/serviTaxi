@@ -14,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
@@ -403,10 +404,6 @@ public class Login_2 extends AppCompatActivity {
                                                                                                                                 Paper.book().write(Common.external_id, responseAllFinal.external);
                                                                                                                                 Paper.book().write(Common.imagen, ruta);
 
-                                                                                                                                Toast.makeText(Login_2.this,
-                                                                                                                                        R.string.mensajePass,
-                                                                                                                                        Toast.LENGTH_LONG).show();
-
                                                                                                                                 Intent intencion = new Intent(getApplicationContext(),
                                                                                                                                         Bienvenido.class);
 
@@ -415,6 +412,8 @@ public class Login_2 extends AppCompatActivity {
                                                                                                                                 intencion.putExtra("email", email);
 
                                                                                                                                 intencion.putExtra("url", ruta);
+
+                                                                                                                                intencion.putExtra("primera", "YES");
 
                                                                                                                                 startActivity(intencion);
                                                                                                                             }
@@ -618,6 +617,8 @@ public class Login_2 extends AppCompatActivity {
         });
     }
 
+
+
     /**
      * Método que nos ayudara para presentar mensajes en un Toast.
      * @param identificador_mensaje el id del mensaje almacenado en el archivo Strings.
@@ -795,7 +796,6 @@ public class Login_2 extends AppCompatActivity {
         });
 
         dialogInicio.show();
-
     }
 
     /***

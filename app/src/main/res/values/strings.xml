@@ -24,5 +24,5 @@
     <string name="ingreseEmail">Por favor, ingrese su email</string>
     <string name="ingreseActuallyPass">Por favor, ingrese su contraseña actual</string>
     <string name="noChange">No se ha podido cambiar la contraseñaç</string>
-    <string name="mensajePass">Se ingreso con Facebook, y se ha creado una contraseña automaticamente, Por seguridad cambie su contraseña. Contraseña por defecto: 123456789</string>
+
 </resources>

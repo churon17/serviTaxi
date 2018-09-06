@@ -294,6 +294,12 @@ public class Bienvenido extends AppCompatActivity
             textoCorreo.setText(email);
         }
 
+        if (getIntent().getExtras().getString("primera")!= null  && getIntent().getExtras().getString("primera").equals("YES")) {
+
+            mostrarVentanaMensaje(nombre);
+
+        }
+
         //Maps
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -328,6 +334,33 @@ public class Bienvenido extends AppCompatActivity
         setUpLocation();
 
         updateFirebaseToken();
+    }
+
+    private void mostrarVentanaMensaje(String nombre) {
+
+        AlertDialog.Builder dialogInicio = new AlertDialog.Builder(this);
+
+        dialogInicio.setTitle("Información");
+
+        dialogInicio.setMessage("!HOLA " +nombre + ", bienvenido a ServiTaxi. Por ser primera vez que ingresas a nuestra aplicación y lo hiciste por medio de Facebook. Te recordamos que puedes acceder cuando sea a serviTaxi con tu correo de Facebook y tu contraseña momentaneamente es: 123456789, Por seguridad te recordamos cambiar tu contraseña lo más pronto posible. Saludos.");
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        View inicioSesion_layout = inflater.
+                inflate(R.layout.frm_agregar_favoritos, null);
+
+        dialogInicio.setView(inicioSesion_layout);
+
+        dialogInicio.setPositiveButton("ACEPTAR",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        dialogInterface.dismiss();
+                    }
+                });
+
+        dialogInicio.show();
     }
 
     /***
@@ -1338,6 +1371,7 @@ public class Bienvenido extends AppCompatActivity
     public void listaFavoritos(){
         String external = String.valueOf(Paper.book().read(Common.external_id));
 
+        Log.e("External", external);
         VolleyPeticion<Favorito[]> favoritos = Conexion.listarFavoritos(
                 getApplicationContext(),
                 external,
@@ -1356,8 +1390,9 @@ public class Bienvenido extends AppCompatActivity
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         //Toast.makeText(Bienvenido.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                        Log.e("Error", error.getMessage());
+//                        Log.e("Error", error.getMessage());
 
+                        Log.e("Error", error.toString());
                         return;
                     }
                 }
