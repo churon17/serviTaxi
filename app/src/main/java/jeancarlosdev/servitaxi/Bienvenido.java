@@ -401,7 +401,7 @@ public class Bienvenido extends AppCompatActivity
                                     .getToken();
 
                             Notification data = new Notification(
-                                    riderToken,
+                                    riderToken+";"+Paper.book().read(Common.external_id),
                                     json_lat_lng); //Enviar a conductor app
 
                             Sender content = new Sender(token.getToken(),
@@ -469,7 +469,7 @@ public class Bienvenido extends AppCompatActivity
                                     .getToken();
 
                             Notification data = new Notification(
-                                    riderToken,
+                                    riderToken+";"+Paper.book().read(Common.external_id),
                                     json_lat_lng); //Enviar a conductor app
 
                             Sender content = new Sender(token.getToken(),
